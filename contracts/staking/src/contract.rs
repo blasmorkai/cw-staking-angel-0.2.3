@@ -592,8 +592,13 @@ fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Res
             Ok(DistributionMsg::WithdrawDelegatorReward { validator: item.unwrap().0 }))
         .collect();
 
+    let treasury_addr = TREASURY.load(deps.storage)?;
+
+    let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
+
     let msgs = msgs?;
     let res = Response::new()
+        .add_message(msg_set_withdraw_address)
         .add_messages(msgs)
         .add_attribute("action", "withdraw_delegation_rewards");
     Ok(res)

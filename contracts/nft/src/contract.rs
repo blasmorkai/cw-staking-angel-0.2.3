@@ -10,16 +10,21 @@ const CONTRACT_NAME: &str = "crates.io:cw721-angel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
-pub struct Cw20 {
-    pub contract_address: String, 
-    pub amount: Uint128,
+// #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
+// pub struct Cw20 {
+//     pub contract_address: String, 
+//     pub amount: Uint128,
+// }
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, )]
+pub enum Status {
+    Bonded, Unbonding
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, )]
 pub struct Metadata {
-    pub native: Option<Vec<Coin>>,    
-    pub cw20: Option<Vec<Cw20>>,
+    pub native: Option<Vec<Coin>>,
+    pub status: Status,
 }
 
 // impl Metadata {
@@ -140,7 +145,7 @@ mod tests {
             token_uri: None,
             extension: Metadata {
                 native: Some(coins(1000, "earth")),
-                cw20: None,
+                status: Status::Bonded,
             },
         };
 
@@ -175,7 +180,7 @@ mod tests {
             token_uri: None,
             extension: Metadata {
                 native: Some(coins(1000, "earth")),
-                cw20: None,
+                status: Status::Bonded,
             },
         };
 
@@ -185,12 +190,12 @@ mod tests {
 
         let old_metadata = Metadata {
             native: Some(coins(1000, "earth")),
-            cw20: None,
+            status: Status::Bonded,
         };
 
         let new_metadata = Metadata {
             native: Some(coins(2000, "earth")),
-            cw20: None,
+            status: Status::Bonded,
         };
 
         let exec_msg = crate::msg::ExecuteMsg::UpdateMetadata { 

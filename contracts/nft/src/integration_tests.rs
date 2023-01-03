@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{msg::{ExecuteMsg}, contract::Metadata};
+    use crate::{msg::{ExecuteMsg}, contract::{Metadata, Status}};
     use crate::helpers::{NftContract};
     use cosmwasm_std::{coin, coins, to_binary, Addr, Coin, Empty, Uint128};
     use cw721::{OwnerOfResponse, NftInfoResponse};
@@ -133,7 +133,7 @@ mod tests {
 
         let metadata = Metadata{ 
             native: Some(coins(1000, NATIVE_DENOM)), 
-            cw20: None };
+            status: Status::Bonded };
 
         //mint NFT to User
         let mint_msg = crate::contract::MintMsg{
@@ -163,7 +163,7 @@ mod tests {
 
         let new_metadata = Metadata{ 
             native: Some(coins(2000, NATIVE_DENOM)), 
-            cw20: None };
+            status: Status::Bonded };
             
         let msg:ExecuteMsg = crate::msg::ExecuteMsg::UpdateMetadata { 
             token_id: TOKEN_ID.to_string(), 
