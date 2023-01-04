@@ -4,8 +4,9 @@ use cosmwasm_std::{Uint128, Coin, FullDelegation, Delegation};
 
 #[cw_serde]
 pub struct InstantiateMsg {
-   pub nft: String,	
-   pub staking: String, 
+   pub nft_code_id: u64,	
+   pub staking_code_id: u64, 
+   pub admin: String,
 }
 
 #[cw_serde]

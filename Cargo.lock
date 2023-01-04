@@ -15,6 +15,7 @@ dependencies = [
  "cw2 1.0.0",
  "cw721",
  "cw721-base",
+ "nft",
  "schemars",
  "serde",
  "thiserror",
