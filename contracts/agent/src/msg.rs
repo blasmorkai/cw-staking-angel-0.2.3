@@ -11,16 +11,27 @@ pub struct InstantiateMsg {
 #[cw_serde]
 pub enum ExecuteMsg {
     /// Bond will bond all staking tokens sent with the message
-    Bond { },
+    Bond {
+       nft_id:Option<String>
+      
+     },
     /// Unbond staking tokens set by amount
-    Unbond { },
+    Unbond { 
+        nft_id:String
+        
+    },
     /// Claim is used to claim native tokens previously "unbonded" after the chain-defined unbonding period
-    Claim { },
+    Claim { 
+        nft_id:String
+    },
 }
 
 
 #[cw_serde]
 #[derive(QueryResponses)]
 pub enum QueryMsg {
-     
+    #[returns(String)]
+     GetNFTAdress{},
+     #[returns(String)]
+     GetStakingAdress{}
 }

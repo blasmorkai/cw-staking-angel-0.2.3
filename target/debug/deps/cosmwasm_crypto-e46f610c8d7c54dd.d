@@ -1,0 +1,9 @@
+/Users/saranevespereira/Documents/WBA_bootcamp/capstone/cw-staking-angel-0.2.3/target/debug/deps/cosmwasm_crypto-e46f610c8d7c54dd.rmeta: /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/lib.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/ed25519.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/errors.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/identity_digest.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/secp256k1.rs
+
+/Users/saranevespereira/Documents/WBA_bootcamp/capstone/cw-staking-angel-0.2.3/target/debug/deps/cosmwasm_crypto-e46f610c8d7c54dd.d: /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/lib.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/ed25519.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/errors.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/identity_digest.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/secp256k1.rs
+
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/lib.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/ed25519.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/errors.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/identity_digest.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cosmwasm-crypto-1.1.9/src/secp256k1.rs:
