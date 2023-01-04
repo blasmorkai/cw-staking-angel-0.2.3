@@ -18,6 +18,7 @@ dependencies = [
  "nft",
  "schemars",
  "serde",
+ "staking",
  "thiserror",
 ]
 
@@ -836,6 +837,12 @@ dependencies = [
  "base64ct",
  "der",
 ]
+
+[[package]]
+name = "staking"
+version = "0.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fea0e05894cebbe8e21bf3765fb89929e6202ece4c2f33a853395f6e87ffea03"
 
 [[package]]
 name = "static_assertions"
