@@ -1,0 +1,14 @@
+/Users/saranevespereira/Documents/WBA_bootcamp/capstone/cw-staking-angel-0.2.3/target/debug/deps/cw721_base-ecb5bb99d03c07cd.rmeta: /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/lib.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/contract_tests.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/error.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/execute.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/helpers.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/msg.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/query.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/state.rs
+
+/Users/saranevespereira/Documents/WBA_bootcamp/capstone/cw-staking-angel-0.2.3/target/debug/deps/cw721_base-ecb5bb99d03c07cd.d: /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/lib.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/contract_tests.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/error.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/execute.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/helpers.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/msg.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/query.rs /Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/state.rs
+
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/lib.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/contract_tests.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/error.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/execute.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/helpers.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/msg.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/query.rs:
+/Users/saranevespereira/.cargo/registry/src/github.com-1ecc6299db9ec823/cw721-base-0.16.0/src/state.rs:
+
+# env-dep:CARGO_PKG_VERSION=0.16.0
