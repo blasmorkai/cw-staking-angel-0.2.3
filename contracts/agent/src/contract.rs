@@ -20,6 +20,8 @@ use crate::state::{STAKING, NFT};
 const CONTRACT_NAME: &str = "crates.io:cw-agent-angel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+const INSTANTIATE_NFT_REPLY_ID: u64 = 0;
+const INSTANTIATE_STAKING_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -42,8 +44,16 @@ pub fn instantiate(
        label: "angel_staking_nft".to_string(),
        msg: to_binary(&nft_msg)?,
    };
-    Ok(Response::new()
+
+//    let staking_msg= staking::
+
+   let reply_msg_nft = SubMsg::reply_on_success(instantiate_nft_msg, INSTANTIATE_NFT_REPLY_ID);
+   let reply_msg_staking = SubMsg::reply_on_success(instantiate_staking_msg, INSTANTIATE_STAKING_REPLY_ID);
+   
+   Ok(Response::new()
         .add_attribute("action", "instantiate")
+        .add_submessage(reply_msg_nft)
+        .add_submessage(reply_msg_staking)
     )   
 }
 
