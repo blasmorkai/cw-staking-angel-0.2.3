@@ -42,9 +42,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Bond {  } => unimplemented!(),
-        ExecuteMsg::Unbond {  } => unimplemented!(),
-        ExecuteMsg::Claim {  } => unimplemented!(),
+        ExecuteMsg::Bond { nft_id } => unimplemented!(),
+        ExecuteMsg::Unbond { nft_id } => unimplemented!(),
+        ExecuteMsg::Claim { nft_id } => unimplemented!(),
     }
 }
 
@@ -53,7 +53,8 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-  
+        QueryMsg::GetNFTAdress {  } => unimplemented!(),
+        QueryMsg::GetStakingAdress {  } => unimplemented!(),
     }
 }
 

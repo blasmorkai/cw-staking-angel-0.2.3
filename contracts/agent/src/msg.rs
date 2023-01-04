@@ -13,12 +13,10 @@ pub enum ExecuteMsg {
     /// Bond will bond all staking tokens sent with the message
     Bond {
        nft_id:Option<String>
-      
-     },
+    },
     /// Unbond staking tokens set by amount
     Unbond { 
-        nft_id:String
-        
+        nft_id:String        
     },
     /// Claim is used to claim native tokens previously "unbonded" after the chain-defined unbonding period
     Claim { 

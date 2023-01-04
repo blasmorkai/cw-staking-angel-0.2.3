@@ -5,7 +5,7 @@ use cw_utils::Duration;
 
 
 
-// Addresses
+// Addresses for contracts
 pub const STAKING: Item<String> = Item::new("staking");
 pub const NFT: Item<String> = Item::new("nft");
 
