@@ -15,6 +15,7 @@ dependencies = [
  "cw2 1.0.0",
  "cw721",
  "cw721-base",
+ "nft",
  "schemars",
  "serde",
  "thiserror",
@@ -29,24 +30,6 @@ dependencies = [
  "getrandom",
  "once_cell",
  "version_check",
-]
-
-[[package]]
-name = "angel-staking"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-controllers",
- "cw-multi-test",
- "cw-storage-plus 1.0.1",
- "cw-utils",
- "cw2 1.0.0",
- "cw20",
- "schemars",
- "serde",
- "thiserror",
 ]
 
 [[package]]
@@ -834,6 +817,24 @@ checksum = "67cf02bbac7a337dc36e4f5a693db6c21e7863f45070f7064577eb4367a3212b"
 dependencies = [
  "base64ct",
  "der",
+]
+
+[[package]]
+name = "staking"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-controllers",
+ "cw-multi-test",
+ "cw-storage-plus 1.0.1",
+ "cw-utils",
+ "cw2 1.0.0",
+ "cw20",
+ "schemars",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

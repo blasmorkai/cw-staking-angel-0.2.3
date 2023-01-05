@@ -1,7 +1,7 @@
 use std::{vec};
 
 // #[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
+use cosmwasm_std::{entry_point, WasmMsg};
 use cosmwasm_std::{
     coin, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
     MessageInfo, QuerierWrapper, Response, StakingMsg, StdResult, Uint128, Uint64,
@@ -11,6 +11,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 use cw_utils::{one_coin, PaymentError, Duration};
 
+
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg,  QueryMsg};
 use crate::state::{STAKING, NFT};
@@ -19,18 +20,38 @@ use crate::state::{STAKING, NFT};
 const CONTRACT_NAME: &str = "crates.io:cw-agent-angel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+const INSTANTIATE_NFT_REPLY_ID: u64 = 0;
+const INSTANTIATE_STAKING_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    deps.api.addr_validate(&msg.admin)?;
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    let nft_msg= nft::msg::InstantiateMsg{ 
+        name: "angel_staking_nft".to_string(), 
+        symbol: "ASM".to_string(), 
+        minter: env.contract.address.into() };
 
-    Ok(Response::new()
+   let instantiate_nft_msg = WasmMsg::Instantiate {
+       code_id: msg.nft_code_id,
+       funds: vec![],
+       admin: Some(msg.admin),
+       label: "angel_staking_nft".to_string(),
+       msg: to_binary(&nft_msg)?,
+   };
+
+   let reply_msg_nft = SubMsg::reply_on_success(instantiate_nft_msg, INSTANTIATE_NFT_REPLY_ID);
+   let reply_msg_staking = SubMsg::reply_on_success(instantiate_staking_msg, INSTANTIATE_STAKING_REPLY_ID);
+   
+   Ok(Response::new()
         .add_attribute("action", "instantiate")
+        .add_submessage(reply_msg_nft)
+        .add_submessage(reply_msg_staking)
     )   
 }
 
@@ -53,10 +74,12 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetNFTAdress {  } => unimplemented!(),
-        QueryMsg::GetStakingAdress {  } => unimplemented!(),
-    }
+    QueryMsg::GetNFTAdress {  } => unimplemented!(),
+    QueryMsg::GetStakingAdress {  } => unimplemented!(),
 }
+}
+
+
 
 
 #[cfg(test)]
