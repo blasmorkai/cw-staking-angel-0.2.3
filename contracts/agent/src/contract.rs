@@ -1,11 +1,10 @@
 use std::{vec};
 
 // #[cfg(not(feature = "library"))]
-use cosmwasm_std::{entry_point, WasmMsg};
 use cosmwasm_std::{
     coin, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
     MessageInfo, QuerierWrapper, Response, StakingMsg, StdResult, Uint128, Uint64,
-    Order, Coin, DistributionMsg, CosmosMsg,
+    Order, Coin, DistributionMsg, CosmosMsg, SubMsg, entry_point, WasmMsg
 };
 
 use cw2::set_contract_version;
@@ -31,23 +30,36 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     deps.api.addr_validate(&msg.admin)?;
+    deps.api.addr_validate(&msg.manager)?;
+    deps.api.addr_validate(&msg.treasury)?;
+
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     let nft_msg= nft::msg::InstantiateMsg{ 
         name: "angel_staking_nft".to_string(), 
         symbol: "ASM".to_string(), 
-        minter: env.contract.address.into() };
-
+        minter: env.contract.address.clone().into() 
+    };
    let instantiate_nft_msg = WasmMsg::Instantiate {
        code_id: msg.nft_code_id,
        funds: vec![],
-       admin: Some(msg.admin),
+       admin: Some(msg.admin.clone()),
        label: "angel_staking_nft".to_string(),
        msg: to_binary(&nft_msg)?,
    };
-
-//    let staking_msg= staking::
-
    let reply_msg_nft = SubMsg::reply_on_success(instantiate_nft_msg, INSTANTIATE_NFT_REPLY_ID);
+
+   let staking_msg= staking::msg::InstantiateMsg{
+    agent:env.contract.address.into(), 
+    manager: msg.manager, 
+    treasury: msg.treasury };
+    let instantiate_staking_msg = WasmMsg::Instantiate {
+        code_id: msg.staking_code_id,
+        funds: vec![],
+        admin: Some(msg.admin),
+        label: "angel_staking".to_string(),
+        msg: to_binary(&staking_msg)?,
+    };
    let reply_msg_staking = SubMsg::reply_on_success(instantiate_staking_msg, INSTANTIATE_STAKING_REPLY_ID);
    
    Ok(Response::new()

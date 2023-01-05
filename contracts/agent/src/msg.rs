@@ -7,6 +7,8 @@ pub struct InstantiateMsg {
    pub nft_code_id: u64,	
    pub staking_code_id: u64, 
    pub admin: String,
+   pub manager: String,
+   pub treasury: String,
 }
 
 #[cw_serde]
