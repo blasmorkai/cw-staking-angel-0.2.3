@@ -56,20 +56,20 @@ mod tests {
         (app, code_id_nft)
     }
 
-    pub fn agent_angel_instantiate(app: &mut App, code_id: u64, agent: String, manager: String, treasury: String,) -> AgentContract {
-        let msg = InstantiateMsg{ nft: todo!(), staking: todo!() };
-        let contract = app
-            .instantiate_contract(
-                code_id,
-                Addr::unchecked(MANAGER1),
-                &msg,
-                &[],
-                "angel-staking",
-                None,
-            )
-            .unwrap();
-        AgentContract(contract)
-    }
+    // pub fn agent_angel_instantiate(app: &mut App, code_id: u64, agent: String, manager: String, treasury: String,) -> AgentContract {
+    //     let msg = InstantiateMsg{ nft: todo!(), staking: todo!() };
+    //     let contract = app
+    //         .instantiate_contract(
+    //             code_id,
+    //             Addr::unchecked(MANAGER1),
+    //             &msg,
+    //             &[],
+    //             "angel-staking",
+    //             None,
+    //         )
+    //         .unwrap();
+    //     AgentContract(contract)
+    // }
 
  
 

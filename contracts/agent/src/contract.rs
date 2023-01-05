@@ -135,13 +135,13 @@ pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<
     let wasm_msg = match nft_id {
         Some(nft_id) => {
             // Query the nft contract and the staking contract, get the current amount staked. See that they match.
-            let owner = get_nft_owner(deps.as_ref(), nft_id, &nft_contract_addr)?;
+            let owner = get_nft_owner(deps.as_ref(), nft_id.clone(), &nft_contract_addr)?;
             if owner != info.sender {
                 return Err(ContractError::NotOwnerNFT {  })
             }
 
             // NFT must have Status::Bonding
-            let mut extension = get_nft_metadata(deps.as_ref(), nft_id, &nft_contract_addr)?;
+            let mut extension = get_nft_metadata(deps.as_ref(), nft_id.clone(), &nft_contract_addr)?;
             if extension.status == Status::Unbonding {
                 return Err(ContractError::UnbondingNFT {  })             
             }
@@ -155,7 +155,7 @@ pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<
             // This is reduntant but increases security of bugs in initial contract version. 
             // nft and staking contract must be aligned on the amount stored on the nft. 
             let extension_amount = extension.native[0].amount;
-            let staking_bonded_amount = get_staking_bonded(deps.as_ref(), nft_id, &staking_contract_addr)?;
+            let staking_bonded_amount = get_staking_bonded(deps.as_ref(), nft_id.clone(), &staking_contract_addr)?;
             if extension_amount != staking_bonded_amount {
                 return Err(ContractError::NFTStakingMismatch { staking: staking_bonded_amount.to_string(), nft: extension_amount.to_string() } )                   
             }
@@ -163,7 +163,7 @@ pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<
             extension.native[0].amount = extension.native[0].amount.checked_add(d_coin.amount).unwrap();
 
             // Create a new metadata, adding the amount.
-            nft_id_info = format!("Rebond nft_id {}", nft_id);
+            nft_id_info = format!("Rebond nft_id {}", nft_id.clone());
             reply_key = EXECUTE_RE_BOND_NFT_REPLY_ID;
 
             get_cw721_update_metadata_msg(nft_id, None, extension, &Addr::unchecked(nft_contract_addr))?
@@ -176,7 +176,7 @@ pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<
             })?;
             let extension = Metadata { native: vec![d_coin], status: Status::Bonded };
             reply_key = EXECUTE_NEW_BOND_NFT_REPLY_ID;
-            get_cw721_mint_msg(&info.sender, current_nft_id.to_string(), None,extension, &Addr::unchecked(nft_contract_address))?
+            get_cw721_mint_msg(&info.sender, current_nft_id.to_string(), None,extension, &Addr::unchecked(nft_contract_addr))?
         }
     };
 
@@ -218,6 +218,9 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
             let res = parse_reply_instantiate_data(reply.clone()).unwrap();  
             let addr = deps.api.addr_validate(res.contract_address.clone().as_str())?;
             NFT.save(deps.storage, &addr.to_string())?;
+
+
+            // Here I create another submessage and instantiate the second contract
         },
         (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Err(_))=> {
             return Err(ContractError::NFTContractNotInstantiated {  });

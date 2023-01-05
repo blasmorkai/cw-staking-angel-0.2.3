@@ -14,7 +14,7 @@ authors       = [
 ]
 
 [workspace.dependencies]
-cosmwasm-schema = "1.1.9"
+cosmwasm-schema = "1.1.6"
 cosmwasm-std    = "1.1.5"
 cw2             = "1.0.0"
 cw20            = "1.0.0"
@@ -37,6 +37,11 @@ incremental = false
 [profile.release.package.nft]
 codegen-units = 1
 incremental = false
+
+[profile.release.package.agent]
+codegen-units = 1
+incremental = false
+
 
 [profile.release]
 rpath = false
