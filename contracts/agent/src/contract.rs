@@ -135,6 +135,24 @@ fn get_cw721_mint_msg(
     Ok(mint_cosmos_msg)
  }
  
+//  UpdateMetadata { token_id: String, token_uri: String, metadata: Metadata },
+
+ fn get_cw721_update_metadata_msg(
+    token_id: &Addr,
+    token_uri: Option<String>,
+    extension: Metadata,
+    nft_contract_address: &Addr
+ ) -> StdResult<CosmosMsg> {
+    // create transfer cw20 msg
+    let update_msg = nft::msg::ExecuteMsg::UpdateMetadata { token_id: token_id.into(), token_uri, extension }; 
+    let exec_update = WasmMsg::Execute {
+        contract_addr: nft_contract_address.into(),
+        msg: to_binary(&update_msg)?,
+        funds: vec![],
+    };
+    let update_cosmos_msg: CosmosMsg = exec_update.into();
+    Ok(update_cosmos_msg)
+ }
 
 
 

@@ -167,8 +167,8 @@ mod tests {
             
         let msg:ExecuteMsg = crate::msg::ExecuteMsg::UpdateMetadata { 
             token_id: TOKEN_ID.to_string(), 
-            token_uri: "token_uri_url2".to_string(), 
-            metadata: new_metadata .clone()
+            token_uri: Some("token_uri_url2".to_string()), 
+            extension: new_metadata .clone()
         };
 
         let cosmos_msg = cw721_contract.call(msg).unwrap();
