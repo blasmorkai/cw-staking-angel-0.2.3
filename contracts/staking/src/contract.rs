@@ -62,7 +62,6 @@ pub fn execute(
         ExecuteMsg::RemoveValidator { address } => execute_remove_validator (deps, env, info, address, ),
         ExecuteMsg::BondCheck {} => execute_bond_check(deps.as_ref(), env, info),
         ExecuteMsg::CollectAngelRewards {  } => execute_collect_rewards(deps, env, info),
-        ExecuteMsg::TransferBalanceToTreasury{  } => execute_transfer_balance(deps, env, info),
     }
 }
 

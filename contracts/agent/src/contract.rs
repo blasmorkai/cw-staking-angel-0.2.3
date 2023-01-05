@@ -15,6 +15,7 @@ use cw_utils::{one_coin, PaymentError, Duration, parse_reply_instantiate_data,};
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg,  QueryMsg};
 use crate::state::{STAKING, NFT};
+use crate::cosmosmsg::{get_cw721_update_metadata_msg,get_cw721_mint_msg,get_cw721_burn_msg};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-agent-angel";
@@ -99,76 +100,10 @@ pub fn execute_claim(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)->
     Ok(Response::new()) 
 }
 
-use cw721_base::MintMsg;
-use nft::contract::Metadata;
-
-// pub struct MintMsg<T> {
-//     /// Unique ID of the NFT
-//     pub token_id: String,
-//     /// The owner of the newly minter NFT
-//     pub owner: String,
-//     /// Universal resource identifier for this NFT
-//     /// Should point to a JSON file that conforms to the ERC721
-//     /// Metadata JSON Schema
-//     pub token_uri: Option<String>,
-//     /// Any custom extension used by this contract
-//     pub extension: T,
-// }
 
 
 
-fn get_cw721_mint_msg(
-    owner: &Addr,
-    token_id: &Addr,
-    token_uri: Option<String>,
-    extension: Metadata,
-    nft_contract_address: &Addr
- ) -> StdResult<CosmosMsg> {
-    // create transfer cw20 msg
-    let mint_msg = nft::msg::ExecuteMsg::Mint(MintMsg { token_id: token_id.into(), owner:owner.into(), token_uri, extension });
-    let exec_mint = WasmMsg::Execute {
-        contract_addr: nft_contract_address.into(),
-        msg: to_binary(&mint_msg)?,
-        funds: vec![],
-    };
-    let mint_cosmos_msg: CosmosMsg = exec_mint.into();
-    Ok(mint_cosmos_msg)
- }
- 
-//  UpdateMetadata { token_id: String, token_uri: String, metadata: Metadata },
 
- fn get_cw721_update_metadata_msg(
-    token_id: &Addr,
-    token_uri: Option<String>,
-    extension: Metadata,
-    nft_contract_address: &Addr
- ) -> StdResult<CosmosMsg> {
-    // create transfer cw20 msg
-    let update_msg = nft::msg::ExecuteMsg::UpdateMetadata { token_id: token_id.into(), token_uri, extension }; 
-    let exec_update = WasmMsg::Execute {
-        contract_addr: nft_contract_address.into(),
-        msg: to_binary(&update_msg)?,
-        funds: vec![],
-    };
-    let update_cosmos_msg: CosmosMsg = exec_update.into();
-    Ok(update_cosmos_msg)
- }
-//     Burn { token_id: String },
-
-fn get_cw721_burn_msg(
-    token_id: &Addr,
-    nft_contract_address: &Addr
- ) -> StdResult<CosmosMsg> {
-    // create transfer cw20 msg
-    let burn_msg = nft::msg::ExecuteMsg::Burn { token_id:token_id.into() }; 
-    let exec_burn = WasmMsg::Execute {
-        contract_addr: nft_contract_address.into(),
-        msg: to_binary(&burn_msg)?,
-        funds: vec![],
-    };
-    let burn_cosmos_msg: CosmosMsg = exec_burn.into();
-    Ok(burn_cosmos_msg)
- }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {

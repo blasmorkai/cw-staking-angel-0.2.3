@@ -24,8 +24,7 @@ pub enum ExecuteMsg {
     AddValidator {address: String, bond_denom: String, unbonding_period: Duration},
     RemoveValidator {address: String},
     BondCheck {},
-    CollectAngelRewards {},
-    TransferBalanceToTreasury{},
+    CollectAngelRewards {},    
 }
 
 
