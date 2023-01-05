@@ -78,11 +78,64 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Bond { nft_id } => unimplemented!(),
-        ExecuteMsg::Unbond { nft_id } => unimplemented!(),
-        ExecuteMsg::Claim { nft_id } => unimplemented!(),
+        ExecuteMsg::Bond { nft_id } => execute_bond(deps, env, info, nft_id),
+        ExecuteMsg::Unbond { nft_id } => execute_unbond(deps, env, info, nft_id),
+        ExecuteMsg::Claim { nft_id } => execute_claim(deps, env, info, nft_id),
     }
 }
+
+pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<String>) -> Result<Response, ContractError>{
+
+
+
+    Ok(Response::new())
+}
+
+pub fn execute_unbond(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{
+    Ok(Response::new()) 
+}
+
+pub fn execute_claim(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{
+    Ok(Response::new()) 
+}
+
+use cw721_base::MintMsg;
+use nft::contract::Metadata;
+
+// pub struct MintMsg<T> {
+//     /// Unique ID of the NFT
+//     pub token_id: String,
+//     /// The owner of the newly minter NFT
+//     pub owner: String,
+//     /// Universal resource identifier for this NFT
+//     /// Should point to a JSON file that conforms to the ERC721
+//     /// Metadata JSON Schema
+//     pub token_uri: Option<String>,
+//     /// Any custom extension used by this contract
+//     pub extension: T,
+// }
+
+
+
+fn get_cw721_mint_msg(
+    owner: &Addr,
+    token_id: &Addr,
+    token_uri: Option<String>,
+    extension: Metadata,
+    nft_contract_address: &Addr
+ ) -> StdResult<CosmosMsg> {
+    // create transfer cw20 msg
+    let mint_msg = nft::msg::ExecuteMsg::Mint(MintMsg { token_id: token_id.into(), owner:owner.into(), token_uri, extension });
+    let exec_mint = WasmMsg::Execute {
+        contract_addr: nft_contract_address.into(),
+        msg: to_binary(&mint_msg)?,
+        funds: vec![],
+    };
+    let mint_cosmos_msg: CosmosMsg = exec_mint.into();
+    Ok(mint_cosmos_msg)
+ }
+ 
+
 
 
 
@@ -122,7 +175,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
     .add_attribute("action", "reply_handled")
     .add_attribute("reply_id", reply.id.to_string())
     )
-   
+  
 }
 
 
