@@ -4,11 +4,12 @@ use std::{vec};
 use cosmwasm_std::{
     coin, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
     MessageInfo, QuerierWrapper, Response, StakingMsg, StdResult, Uint128, Uint64,
-    Order, Coin, DistributionMsg, CosmosMsg, SubMsg, entry_point, WasmMsg
+    Order, Coin, DistributionMsg, CosmosMsg, SubMsg, entry_point, WasmMsg, Reply,
+    SubMsgResult
 };
 
 use cw2::set_contract_version;
-use cw_utils::{one_coin, PaymentError, Duration};
+use cw_utils::{one_coin, PaymentError, Duration, parse_reply_instantiate_data,};
 
 
 use crate::error::ContractError;
@@ -88,9 +89,40 @@ pub fn execute(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-    QueryMsg::GetNFTAdress {  } => unimplemented!(),
-    QueryMsg::GetStakingAdress {  } => unimplemented!(),
+        QueryMsg::GetNFTAdress {  } => unimplemented!(),
+        QueryMsg::GetStakingAdress {  } => unimplemented!(),
+    }
 }
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
+
+    match (reply.clone().id, reply.clone().result) {
+        (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Ok(_))=> {
+            let res = parse_reply_instantiate_data(reply.clone()).unwrap();  
+            let addr = deps.api.addr_validate(res.contract_address.clone().as_str())?;
+            NFT.save(deps.storage, &addr.to_string())?;
+        },
+        (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Err(_))=> {
+            return Err(ContractError::NFTContractNotInstantiated {  });
+        },
+        (INSTANTIATE_STAKING_REPLY_ID, SubMsgResult::Ok(_))=>{
+            let res = parse_reply_instantiate_data(reply.clone()).unwrap();  
+            let addr = deps.api.addr_validate(res.contract_address.clone().as_str())?;
+            STAKING.save(deps.storage, &addr.to_string())?;
+        },
+        (INSTANTIATE_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{
+            return Err(ContractError::StakingContractNotInstantiated {  })
+        },
+        (_ , _) => {
+            return Err(ContractError::UnknownReplyIdSubMsgResult { id: reply.id.to_string() });      
+        },
+      };
+     Ok(Response::new()
+    .add_attribute("action", "reply_handled")
+    .add_attribute("reply_id", reply.id.to_string())
+    )
+   
 }
 
 
