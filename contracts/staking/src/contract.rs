@@ -603,7 +603,7 @@ fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Res
     Ok(res)
 }
 
-fn execute_transfer_balance (deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError>{
+fn _execute_transfer_balance (deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError>{
     let manager = MANAGER.load(deps.storage)?;
     if info.sender != manager {
         return Err(ContractError::Unauthorized {});
@@ -1485,8 +1485,8 @@ mod tests {
         assert_eq!(res.attributes[0], ("action", "withdraw_delegation_rewards"));
     }
 
-    #[test]
-    fn send_balance_treasury() {
+
+    fn _send_balance_treasury() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
         let env = mock_env();
@@ -1509,23 +1509,23 @@ mod tests {
         // Suppose the rewards received are 50
         deps.querier.update_balance(MOCK_CONTRACT_ADDR, coins(50, "ustake"));
 
-        let msg = ExecuteMsg::TransferBalanceToTreasury {  };
-        let res = execute(deps.as_mut(), env_later, info.clone(), msg).unwrap();
-        assert_eq!(res.attributes, vec![
-            attr("action", "transfer_balance"), 
-            attr("dst_addr", "treasury"), 
-            attr("denom","ustake"), 
-            attr("amount", "50")
-            ]
-        );
-        assert_eq!(res.messages[0].msg, 
-            CosmosMsg::Bank(
-                BankMsg::Send {
-                    to_address: TREASURY1.to_string(), 
-                    amount: vec![Coin { denom: "ustake".to_string(), amount: Uint128::from(50u128) }],
-                }
-            )
-        );    
+        // let msg = ExecuteMsg::TransferBalanceToTreasury {  };
+        // let res = execute(deps.as_mut(), env_later, info.clone(), msg).unwrap();
+        // assert_eq!(res.attributes, vec![
+        //     attr("action", "transfer_balance"), 
+        //     attr("dst_addr", "treasury"), 
+        //     attr("denom","ustake"), 
+        //     attr("amount", "50")
+        //     ]
+        // );
+        // assert_eq!(res.messages[0].msg, 
+        //     CosmosMsg::Bank(
+        //         BankMsg::Send {
+        //             to_address: TREASURY1.to_string(), 
+        //             amount: vec![Coin { denom: "ustake".to_string(), amount: Uint128::from(50u128) }],
+        //         }
+        //     )
+        // );    
     }
 
 }

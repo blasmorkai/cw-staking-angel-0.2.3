@@ -15,7 +15,7 @@ use cw_utils::{one_coin, PaymentError, Duration, parse_reply_instantiate_data,};
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg,  QueryMsg};
 use crate::state::{STAKING, NFT};
-use crate::cosmosmsg::{get_cw721_update_metadata_msg,get_cw721_mint_msg,get_cw721_burn_msg};
+use crate::cosmosmsg::{get_cw721_update_metadata_msg,get_cw721_mint_msg,get_cw721_burn_msg,get_staking_bond_msg,get_staking_unbond_msg, get_staking_claim_msg};
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-agent-angel";
