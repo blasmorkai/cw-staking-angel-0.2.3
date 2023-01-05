@@ -4,5 +4,5 @@ pub mod msg;
 pub mod integration_tests;
 pub mod error;
 pub mod state;
-pub mod cosmosmsg;
+pub mod wasm_query;
 

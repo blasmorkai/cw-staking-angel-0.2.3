@@ -1,3 +1,4 @@
+use std::fmt::format;
 use std::{vec};
 
 // #[cfg(not(feature = "library"))]
@@ -5,7 +6,7 @@ use cosmwasm_std::{
     coin, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
     MessageInfo, QuerierWrapper, Response, StakingMsg, StdResult, Uint128, Uint64,
     Order, Coin, DistributionMsg, CosmosMsg, SubMsg, entry_point, WasmMsg, Reply,
-    SubMsgResult
+    SubMsgResult, Empty,
 };
 
 use cw2::set_contract_version;
@@ -15,7 +16,8 @@ use cw_utils::{one_coin, PaymentError, Duration, parse_reply_instantiate_data,};
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg,  QueryMsg};
 use crate::state::{STAKING, NFT, NFT_ID};
-use crate::cosmosmsg::{get_cw721_update_metadata_msg,get_cw721_mint_msg,get_cw721_burn_msg,get_staking_bond_msg,get_staking_unbond_msg, get_staking_claim_msg};
+use crate::wasm_query::{get_cw721_update_metadata_msg, get_cw721_mint_msg, get_cw721_burn_msg, get_staking_bond_msg,
+                        get_staking_unbond_msg, get_staking_claim_msg, get_nft_owner, get_nft_metadata , get_staking_bonded };
 use nft::contract::{Metadata, Status};
 
 // version info for migration info
@@ -42,11 +44,19 @@ pub fn instantiate(
 
     NFT_ID.save(deps.storage, &Uint128::zero())?;
 
-    let nft_msg= nft::msg::InstantiateMsg{ 
+    // TODO: Choose this implementation or the commented one.
+    let nft_msg= nft::contract::InstantiateMsg{
         name: "angel_staking_nft".to_string(), 
         symbol: "ASM".to_string(), 
         minter: env.contract.address.clone().into() 
     };
+
+    // let nft_msg= cw721_base::msg::InstantiateMsg{ 
+    //     name: "angel_staking_nft".to_string(), 
+    //     symbol: "ASM".to_string(), 
+    //     minter: env.contract.address.clone().into() 
+    // };
+
    let instantiate_nft_msg = WasmMsg::Instantiate {
        code_id: msg.nft_code_id,
        funds: vec![],
@@ -118,23 +128,65 @@ pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<
         },
     };
 
-    let nft_contract_address = NFT.load(deps.storage)?;
+    let nft_contract_addr = NFT.load(deps.storage)?;
+    let staking_contract_addr= STAKING.load(deps.storage)?;
+    let reply_key : u64;
+    let nft_id_info: String;
+    let wasm_msg = match nft_id {
+        Some(nft_id) => {
+            // Query the nft contract and the staking contract, get the current amount staked. See that they match.
+            let owner = get_nft_owner(deps.as_ref(), nft_id, &nft_contract_addr)?;
+            if owner != info.sender {
+                return Err(ContractError::NotOwnerNFT {  })
+            }
 
-    let cosmos_msg = match nft_id {
-        Some(nft_id) => {},
+            // NFT must have Status::Bonding
+            let mut extension = get_nft_metadata(deps.as_ref(), nft_id, &nft_contract_addr)?;
+            if extension.status == Status::Unbonding {
+                return Err(ContractError::UnbondingNFT {  })             
+            }
+
+             // Current implementation only lets the user bond one coin per nft. Denom/Amount can be restacked
+             // No second coin will be added and extension.native.len() == 1
+            if extension.native[0].denom != d_coin.denom{
+                return Err(ContractError::OnlyOneNativeCoinPerNFT {  } )                 
+            } 
+
+            // This is reduntant but increases security of bugs in initial contract version. 
+            // nft and staking contract must be aligned on the amount stored on the nft. 
+            let extension_amount = extension.native[0].amount;
+            let staking_bonded_amount = get_staking_bonded(deps.as_ref(), nft_id, &staking_contract_addr)?;
+            if extension_amount != staking_bonded_amount {
+                return Err(ContractError::NFTStakingMismatch { staking: staking_bonded_amount.to_string(), nft: extension_amount.to_string() } )                   
+            }
+
+            extension.native[0].amount = extension.native[0].amount.checked_add(d_coin.amount).unwrap();
+
+            // Create a new metadata, adding the amount.
+            nft_id_info = format!("Rebond nft_id {}", nft_id);
+            reply_key = EXECUTE_RE_BOND_NFT_REPLY_ID;
+
+            get_cw721_update_metadata_msg(nft_id, None, extension, &Addr::unchecked(nft_contract_addr))?
+        },
         None => {
             let current_nft_id = NFT_ID.load(deps.storage)?;
-            NFT_ID.update(deps.storage, |mut nft_id| -> Result<_, ContractError> {
-                Ok(nft_id + Uint128::from(1))
+            nft_id_info = format!("Mint nft_id {}", current_nft_id.clone());
+            NFT_ID.update(deps.storage, |nft_id| -> Result<_, ContractError> {
+                Ok(nft_id + Uint128::from(1u128))
             })?;
             let extension = Metadata { native: vec![d_coin], status: Status::Bonded };
-            get_cw721_mint_msg(&info.sender, current_nft_id.to_string(), None,extension, &Addr::unchecked(nft_contract_address));
+            reply_key = EXECUTE_NEW_BOND_NFT_REPLY_ID;
+            get_cw721_mint_msg(&info.sender, current_nft_id.to_string(), None,extension, &Addr::unchecked(nft_contract_address))?
         }
     };
 
-    let msg = 
-    let reply_msg_nft = SubMsg::reply_always(cosmos_msg, EXECUTE_NEW_BOND_NFT_REPLY_ID);
-    Ok(Response::new())
+    let submsg:SubMsg<Empty> = SubMsg::reply_always(wasm_msg, reply_key);
+
+    Ok(Response::new()
+        .add_attribute("action", "execute_bond")
+        .add_attribute("nft_id_info", nft_id_info)
+        .add_submessage(submsg)
+    )
 }
 
 pub fn execute_unbond(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{

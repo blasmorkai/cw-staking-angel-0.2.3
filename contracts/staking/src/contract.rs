@@ -645,6 +645,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::RewardsBalance {  } => to_binary(&deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?),
         QueryMsg::AllDelegations {  } => to_binary(&deps.querier.query_all_delegations(env.contract.address)?),
         QueryMsg::DelegationOnValidator { address } => to_binary(&deps.querier.query_delegation(env.contract.address, address)?),
+        QueryMsg::BondedByNFT { nft_id } => to_binary(&NFT_BONDED.may_load(deps.storage,&nft_id)?.unwrap_or_default()),
     }
 }
 

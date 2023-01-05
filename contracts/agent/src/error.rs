@@ -29,5 +29,16 @@ pub enum ContractError {
 
     #[error("Invalid Coin")]
     InvalidCoin {},
+
+    #[error("Not the owner of the NFT")]
+    NotOwnerNFT {},
+
+    #[error("Can not rebond and unbonding NFT")]
+    UnbondingNFT {},
+
+    #[error("NFT only supports one native coin")]
+    OnlyOneNativeCoinPerNFT {},
     
+    #[error("NFT amount mismatch nft: {nft}  staking: {staking}")]
+    NFTStakingMismatch { staking: String, nft:String }
 }

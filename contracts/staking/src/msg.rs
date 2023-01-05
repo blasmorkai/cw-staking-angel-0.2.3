@@ -55,7 +55,9 @@ pub enum QueryMsg {
     #[returns(Option<FullDelegation>)]
     DelegationOnValidator {address:String},        
     #[returns(Vec<Delegation>)]
-    AllDelegations {},        
+    AllDelegations {},
+    #[returns(Uint128)]
+    BondedByNFT {nft_id: String},         
 }
 
 
