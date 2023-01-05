@@ -153,9 +153,22 @@ fn get_cw721_mint_msg(
     let update_cosmos_msg: CosmosMsg = exec_update.into();
     Ok(update_cosmos_msg)
  }
+//     Burn { token_id: String },
 
-
-
+fn get_cw721_burn_msg(
+    token_id: &Addr,
+    nft_contract_address: &Addr
+ ) -> StdResult<CosmosMsg> {
+    // create transfer cw20 msg
+    let burn_msg = nft::msg::ExecuteMsg::Burn { token_id:token_id.into() }; 
+    let exec_burn = WasmMsg::Execute {
+        contract_addr: nft_contract_address.into(),
+        msg: to_binary(&burn_msg)?,
+        funds: vec![],
+    };
+    let burn_cosmos_msg: CosmosMsg = exec_burn.into();
+    Ok(burn_cosmos_msg)
+ }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
