@@ -72,8 +72,8 @@ pub mod entry {
             ExecuteMsg::UpdateMetadata {
                 token_id,
                 token_uri,
-                metadata,
-            } => execute_update_metadata(deps, env, info, token_id, token_uri, metadata),
+                extension,
+            } => execute_update_metadata(deps, env, info, token_id, token_uri, extension),
             _ => cw721_base::Cw721Contract::execute(&contract, deps, env, info, msg.into()),
         }
     }
@@ -93,7 +93,7 @@ pub mod entry {
         _env: Env,
         info: MessageInfo,
         token_id: String,
-        token_uri: String,
+        token_uri: Option<String>,
         metadata: Metadata
     ) -> Result<Response, ContractError> {
         let contract: Cw721Contract<Extension, Empty, Empty, Empty> = cw721_base::Cw721Contract::default();
@@ -105,7 +105,7 @@ pub mod entry {
                 .tokens
                 .update(deps.storage, &token_id, |token| match token {
                     Some(mut token_info) => {
-                        token_info.token_uri = Some(token_uri.clone());
+                        token_info.token_uri = token_uri.clone();
                         token_info.extension = metadata;
                         Ok(token_info)
                     },
@@ -200,8 +200,8 @@ mod tests {
 
         let exec_msg = crate::msg::ExecuteMsg::UpdateMetadata { 
             token_id: token_id.to_string(), 
-            token_uri: token_uri.to_string(), 
-            metadata: new_metadata.clone() 
+            token_uri: Some(token_uri.to_string()), 
+            extension: new_metadata.clone() 
         };
 
         entry::execute(deps.as_mut(), mock_env(), info, exec_msg.into()).unwrap();

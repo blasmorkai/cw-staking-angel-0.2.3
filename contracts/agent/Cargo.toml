@@ -29,6 +29,7 @@ optimize = """docker run --rm -v "$(pwd)":/code \
 """
 
 [dependencies]
+
 cosmwasm-std      = { workspace = true }
 cw2               = { workspace = true }
 cw721-base        = { workspace = true }
@@ -41,7 +42,7 @@ thiserror         = { workspace = true }
 cosmwasm-schema   = { workspace = true }
 cw-utils          = { workspace = true }
 nft = {path="../nft"}
-staking= {path = "../staking"}
+staking ={path="../staking"}
 
 
 [dev-dependencies]

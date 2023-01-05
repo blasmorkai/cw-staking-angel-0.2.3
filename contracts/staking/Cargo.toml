@@ -1,5 +1,5 @@
 [package]
-name = "angel-staking"
+name = "staking"
 version = { workspace = true }
 authors = { workspace = true }
 edition = { workspace = true }
