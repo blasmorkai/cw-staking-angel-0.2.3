@@ -34,24 +34,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "angel-staking"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-controllers",
- "cw-multi-test",
- "cw-storage-plus 1.0.1",
- "cw-utils",
- "cw2 1.0.0",
- "cw20",
- "schemars",
- "serde",
- "thiserror",
-]
-
-[[package]]
 name = "anyhow"
 version = "1.0.66"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -840,9 +822,21 @@ dependencies = [
 
 [[package]]
 name = "staking"
-version = "0.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fea0e05894cebbe8e21bf3765fb89929e6202ece4c2f33a853395f6e87ffea03"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-controllers",
+ "cw-multi-test",
+ "cw-storage-plus 1.0.1",
+ "cw-utils",
+ "cw2 1.0.0",
+ "cw20",
+ "schemars",
+ "serde",
+ "thiserror",
+]
 
 [[package]]
 name = "static_assertions"
