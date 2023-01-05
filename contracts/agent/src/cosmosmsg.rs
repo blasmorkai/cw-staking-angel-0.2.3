@@ -23,13 +23,13 @@ use staking::msg::{ExecuteMsg, QueryMsg};
 
 pub fn get_cw721_mint_msg(
     owner: &Addr,
-    token_id: &Addr,
+    token_id: String,
     token_uri: Option<String>,
     extension: Metadata,
     nft_contract_address: &Addr
  ) -> StdResult<CosmosMsg> {
     // create mint msg
-    let mint_msg = nft::msg::ExecuteMsg::Mint(MintMsg { token_id: token_id.into(), owner:owner.into(), token_uri, extension });
+    let mint_msg = nft::msg::ExecuteMsg::Mint(MintMsg { token_id, owner:owner.into(), token_uri, extension });
     let exec_mint = WasmMsg::Execute {
         contract_addr: nft_contract_address.into(),
         msg: to_binary(&mint_msg)?,
@@ -42,12 +42,12 @@ pub fn get_cw721_mint_msg(
 //  UpdateMetadata { token_id: String, token_uri: String, metadata: Metadata },
 
  pub fn get_cw721_update_metadata_msg(
-    token_id: &Addr,
+    token_id: String,
     token_uri: Option<String>,
     extension: Metadata,
     nft_contract_address: &Addr
  ) -> StdResult<CosmosMsg> {
-    let update_msg = nft::msg::ExecuteMsg::UpdateMetadata { token_id: token_id.into(), token_uri, extension }; 
+    let update_msg = nft::msg::ExecuteMsg::UpdateMetadata { token_id, token_uri, extension }; 
     let exec_update = WasmMsg::Execute {
         contract_addr: nft_contract_address.into(),
         msg: to_binary(&update_msg)?,
@@ -59,10 +59,10 @@ pub fn get_cw721_mint_msg(
 //     Burn { token_id: String },
 
 pub fn get_cw721_burn_msg(
-    token_id: &Addr,
+    token_id: String,
     nft_contract_address: &Addr
  ) -> StdResult<CosmosMsg> {
-    let burn_msg = nft::msg::ExecuteMsg::Burn { token_id:token_id.into() }; 
+    let burn_msg = nft::msg::ExecuteMsg::Burn { token_id }; 
     let exec_burn = WasmMsg::Execute {
         contract_addr: nft_contract_address.into(),
         msg: to_binary(&burn_msg)?,
@@ -135,8 +135,6 @@ pub fn get_staking_claim_msg(
 //    let add_validator_cosmos_msg: CosmosMsg = add_validator_exec.into();
 //    Ok(add_validator_cosmos_msg)
 // }
-
-// //    RemoveValidator {address: String},
 
 // pub fn get_remove_validator_msg(
 //    address: String,

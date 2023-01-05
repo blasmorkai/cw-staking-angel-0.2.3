@@ -20,4 +20,14 @@ pub enum ContractError {
 
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },
+
+    #[error("No funds sent")]
+    NoFunds {},
+
+    #[error("Multiple denoms sent")]
+    MultipleDenoms {},
+
+    #[error("Invalid Coin")]
+    InvalidCoin {},
+    
 }

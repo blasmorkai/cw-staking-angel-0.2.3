@@ -23,7 +23,7 @@ pub enum Status {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, )]
 pub struct Metadata {
-    pub native: Option<Vec<Coin>>,
+    pub native: Vec<Coin>,
     pub status: Status,
 }
 
@@ -144,7 +144,7 @@ mod tests {
             owner: "bob".to_string(),
             token_uri: None,
             extension: Metadata {
-                native: Some(coins(1000, "earth")),
+                native: coins(1000, "earth"),
                 status: Status::Bonded,
             },
         };
@@ -179,7 +179,7 @@ mod tests {
             owner: "bob".to_string(),
             token_uri: None,
             extension: Metadata {
-                native: Some(coins(1000, "earth")),
+                native: coins(1000, "earth"),
                 status: Status::Bonded,
             },
         };
@@ -189,12 +189,12 @@ mod tests {
 
 
         let old_metadata = Metadata {
-            native: Some(coins(1000, "earth")),
+            native: coins(1000, "earth"),
             status: Status::Bonded,
         };
 
         let new_metadata = Metadata {
-            native: Some(coins(2000, "earth")),
+            native: coins(2000, "earth"),
             status: Status::Bonded,
         };
 

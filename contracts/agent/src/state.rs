@@ -8,4 +8,5 @@ use cw_utils::Duration;
 // Addresses
 pub const STAKING: Item<String> = Item::new("staking");
 pub const NFT: Item<String> = Item::new("nft");
+pub const NFT_ID: Item<Uint128> = Item::new("nft_id");
 
