@@ -45,7 +45,9 @@ pub enum QueryMsg {
     #[returns(Uint128)]
     Unbonding {},
     #[returns(Uint128)]
-    BondedOnValidator {address: String},    
+    BondedOnValidator {address: String},  
+    #[returns(Uint128)]
+    BondedByNFT {nft_id: String},     
     #[returns(String)]
     Agent {},   
     #[returns(String)]
@@ -56,8 +58,7 @@ pub enum QueryMsg {
     DelegationOnValidator {address:String},        
     #[returns(Vec<Delegation>)]
     AllDelegations {},
-    #[returns(Uint128)]
-    BondedByNFT {nft_id: String},         
+         
 }
 
 

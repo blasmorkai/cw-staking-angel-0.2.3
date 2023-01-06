@@ -234,7 +234,7 @@ pub fn execute_unbond(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-
     
     // extension is updated and stored on the cache so that it can be used on reply entry point
     extension.status =  Status::Unbonding;
-    let cache_nft = CacheNFT { sender: info.sender, nft_id, extension };
+    let cache_nft = CacheNFT { sender: info.sender, nft_id: nft_id.clone(), extension };
     CACHE_NFT.save(deps.storage, &cache_nft )?;
 
     let unbond_msg= staking::msg::ExecuteMsg::Unbond { nft_id: nft_id_uint128, amount: nft_amount};
@@ -396,18 +396,6 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
         },
       }
 
-    //  if another_reply {
-    //     Ok(Response::new()
-    //         .add_attribute("action", "reply_handled")
-    //         .add_attribute("reply_id", reply.id.to_string())
-    //         .add_submessage(submsg)
-    //     )
-    //  } else {
-    //     Ok(Response::new()
-    //         .add_attribute("action", "reply_handled")
-    //         .add_attribute("reply_id", reply.id.to_string())
-    //     )
-    //  } 
 }
 
 

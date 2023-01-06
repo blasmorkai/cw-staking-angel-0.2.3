@@ -130,7 +130,7 @@ pub fn get_nft_metadata(deps: Deps, nft_id: String, nft_contract_addr: &String) 
 pub fn get_staking_bonded (deps: Deps, nft_id: String, staking_contract_addr: &String) -> StdResult<Uint128> {
    let resp: Uint128 = deps
        .querier
-       .query_wasm_smart(staking_contract_addr, &staking::msg::QueryMsg::BondedByNFT { nft_id: nft_id })?;
+       .query_wasm_smart(staking_contract_addr, &staking::msg::QueryMsg::BondedByNFT { nft_id : nft_id })?;
    Ok(resp)
 }
 
