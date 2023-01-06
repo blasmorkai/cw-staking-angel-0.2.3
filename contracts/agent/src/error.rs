@@ -51,6 +51,12 @@ pub enum ContractError {
     #[error("Unable to stake based on a rebonded/updated NFT")]
     UnableToStakeReBondNFT {},
     
+    #[error("Unable to unbond staking")]
+    UnableToUnbondStaking {},
+
+    #[error("Unable to unbond NFT")]
+    UnableToUnbondNFT {},
+    
     #[error("NFT amount mismatch nft: {nft}  staking: {staking}")]
     NFTStakingMismatch { staking: String, nft:String }
 }
