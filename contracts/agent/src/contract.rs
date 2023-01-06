@@ -217,13 +217,13 @@ pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<
 
 pub fn execute_unbond(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{
     
-    
-    let submsg:SubMsg<Empty>;
-    Ok(Response::new()
-        .add_attribute("action", "execute_unbond")
-        .add_attribute("nft_id_info", nft_id)
-        .add_submessage(submsg)
-    )
+    todo!()
+    // let submsg:SubMsg<Empty>;
+    // Ok(Response::new()
+    //     .add_attribute("action", "execute_unbond")
+    //     .add_attribute("nft_id_info", nft_id)
+    //     .add_submessage(submsg)
+    // )
 }
 
 pub fn execute_claim(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{

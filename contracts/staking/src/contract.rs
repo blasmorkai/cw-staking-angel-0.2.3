@@ -81,15 +81,18 @@ pub fn execute_bond(deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Uint128
             }
         },
     };
+
     let can_be_bonded_denom = deps.querier.query_bonded_denom()?;
     if d_coins.denom != can_be_bonded_denom {
         return Err(ContractError::InvalidCoin {  });       
     }
     let amount = d_coins.amount;
 
+
     let validator_address = chosen_validator(deps.as_ref(), None)?;
 
-    // Update bonded tokens to validator
+
+    //Update bonded tokens to validator
     let state = State::new();
     let mut validator_info = state.validator.load(deps.storage, &validator_address)?;
     validator_info.bonded = validator_info.bonded.checked_add(amount.u128()).unwrap();  
@@ -1373,7 +1376,7 @@ mod tests {
         // VALIDATOR3 no longer registered
         let msg = QueryMsg::ValidatorInfo { address: VALIDATOR3.to_string() };
         let res = query(deps.as_ref(), mock_env(), msg).unwrap_err();
-        assert_eq!(res, StdError::NotFound { kind: "angel_staking::state::ValidatorInfo".to_string() });
+        assert_eq!(res, StdError::NotFound { kind: "staking::state::ValidatorInfo".to_string() });
 
         // add VALIDATOR3 again 
         let msg = ExecuteMsg::AddValidator { 

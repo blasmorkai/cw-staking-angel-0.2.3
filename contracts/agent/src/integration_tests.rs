@@ -22,6 +22,18 @@ mod tests {
         Box::new(contract)
     }
 
+    // pub fn contract_amm() -> Box<dyn Contract<Empty>> {
+    //     let contract = ContractWrapper::new(
+    //         crate::contract::execute,
+    //         crate::contract::instantiate,
+    //         crate::contract::query,
+    //     )
+    //     .with_reply(crate::contract::reply)
+    //     .with_migrate(crate::contract::migrate);
+    //     Box::new(contract)
+    // }
+
+
 
     fn mock_app() -> App {
         AppBuilder::new().build(|router, _, storage| {

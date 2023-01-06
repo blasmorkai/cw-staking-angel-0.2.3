@@ -1,27 +1,29 @@
 #[cfg(test)]
 mod tests {
     use crate::{helpers::StakingContract, state::ValidatorInfo};
-    use cosmwasm_std::{coin, coins, to_binary, Addr, Coin, Empty, Uint128, Decimal, Validator};
+    use cosmwasm_std::{coin, coins, to_binary, Addr, Coin, Empty, Uint128, Decimal, Validator, FullDelegation};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor, StakingInfo};
     use cw_utils::WEEK;
     use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
     const NATIVE_DENOM: &str = "ujunox";
-    const MANAGER1: &str = "juno10c3slrqx3369mfsr9670au22zvq082jaej8ve4";
-    const AGENT1: &str = "juno10c3slrqx3369mfsr9670au22zvq082jaejxx23";
-    const TREASURY1: &str = "juno10c3slrqx3369mfsr9670au22zvq082jaejxx85";
+    const MANAGER1: &str = "juno148v3g2dpjeq6hwnlagmvq8pnqe5r9wjcrvel8u";
+    const AGENT1: &str = "juno15urq2dtp9qce4fyc85m6upwm9xul30492fasy3";
+    const TREASURY1: &str = "juno196ax4vc0lwpxndu9dyhvca7jhxp70rmcl99tyh";
 
     const NFT_ID1 :u128 = 1u128;
     const NFT_ID2 :u128 = 2u128;
     const NFT_ID3 :u128 = 3u128;
 
-    const VALIDATOR1: &str = "AD4AA82AD0116B34848F152EF2CD86C5B061CE74";
-    const VALIDATOR2: &str = "AD4AA82AD0116B34848F152EF2CD86C5B061CE75";
-    const VALIDATOR3: &str = "AD4AA82AD0116B34848F152EF2CD86C5B061CE76";
+    // const VALIDATOR1: &str = "AD4AA82AD0116B34848F152EF2CD86C5B061CE74";
+    const VALIDATOR1: &str = "validator1";
+    const VALIDATOR2: &str = "validator2";
+    const VALIDATOR3: &str = "validator3";
 
     const USER1: &str = "juno10c3slrqx3369mfsr9670au22zvq082jaejxx86";
-    const ADMIN: &str = MANAGER1;
+    // const ADMIN: &str = MANAGER1;
+    const ADMIN: &str = "ADMIN";
 
     pub fn contract_staking() -> Box<dyn Contract<Empty>> {
         let contract = ContractWrapper::new(
@@ -42,7 +44,7 @@ mod tests {
                     &Addr::unchecked(AGENT1),
                     vec![Coin {
                         denom: NATIVE_DENOM.to_string(),
-                        amount: Uint128::new(1000),
+                        amount: Uint128::new(10000),
                     }],
                 )
                 .unwrap();
@@ -158,28 +160,92 @@ mod tests {
             .unwrap()
     }
 
-//    #[test]
+    fn get_bonded_by_nft(app: &App, staking_contract: &StakingContract, nft_id:String) -> Uint128 {
+        app.wrap()
+            .query_wasm_smart(staking_contract.addr(), &QueryMsg::BondedByNFT { nft_id })
+            .unwrap()
+    }
+
+    pub fn query_module_delegation(
+        app: &App,
+        delegator: &str,
+        validator: &str,
+    ) -> Option<FullDelegation> {
+        app.wrap().query_delegation(delegator, validator).unwrap()
+    }
+    
+    pub fn query_rewards(app: &App, delegator: &str, validator: &str) -> Option<Uint128> {
+        let rewards = query_module_delegation(app, delegator, validator)
+            .unwrap()
+            .accumulated_rewards;
+    
+        if rewards.is_empty() {
+            None
+        } else {
+            Some(rewards[0].amount)
+        }
+    }
+
+    #[test]
     fn add_three_validators() {
         let (mut app, code_id) = store_code();
         let staking_contract = staking_angel_instantiate(&mut app, code_id, AGENT1.into(), MANAGER1.into(), TREASURY1.into());
-        // let msg = ExecuteMsg::AddValidator { address: VALIDATOR1.into(), bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
+        // Add Three validators
+        add_3_validators(&mut app, &staking_contract, Addr::unchecked(MANAGER1), VALIDATOR1.into(), VALIDATOR2.into(), VALIDATOR3.into());
+        let validator1_info = get_validator_info(&app, &staking_contract, VALIDATOR1.into());
+        assert_eq!(validator1_info, 
+            ValidatorInfo{ 
+                bond_denom: NATIVE_DENOM.into(), 
+                unbonding_period: WEEK, 
+                bonded: 0, 
+                unbonding: 0, 
+            }
+        );
+        // Bond 3 NFTs
+        let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID1) };
+        app.execute_contract(Addr::unchecked(AGENT1), staking_contract.addr(), &msg, &[coin(600, NATIVE_DENOM.to_string())]).unwrap();
+        let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID2) };
+        app.execute_contract(Addr::unchecked(AGENT1), staking_contract.addr(), &msg, &[coin(400, NATIVE_DENOM.to_string())]).unwrap();
+        let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID3) };
+        app.execute_contract(Addr::unchecked(AGENT1), staking_contract.addr(), &msg, &[coin(200, NATIVE_DENOM.to_string())]).unwrap();
+        let nft_info = get_bonded_by_nft(&app, &staking_contract, NFT_ID1.to_string());
+        assert_eq!(nft_info, Uint128::from(600u128)); 
 
+        let validator1_info = get_validator_info(&app, &staking_contract, VALIDATOR1.into());
+        assert_eq!(validator1_info.bonded, 600u128);        
+        let validator1_info = get_validator_info(&app, &staking_contract, VALIDATOR2.into());
+        assert_eq!(validator1_info.bonded, 400u128);
+        let validator1_info = get_validator_info(&app, &staking_contract, VALIDATOR3.into());
+        assert_eq!(validator1_info.bonded, 200u128);
 
+        // move block year a head and see there are some rewards
+        app.update_block(|block| block.time = block.time.plus_seconds(60 * 60 * 24 * 365));
+        let total_rewards = query_rewards(&app, staking_contract.addr().as_str(), VALIDATOR1).unwrap();
+        assert_eq!(total_rewards,Uint128::from(60u128));
+
+        // // Unbond NFT_ID1 that bonded 600 
+        // let msg = ExecuteMsg::CollectAngelRewards {  };
         // app.execute_contract(Addr::unchecked(MANAGER1), staking_contract.addr(), &msg, &[]).unwrap();
- 
-        // Validator 'AD4AA82AD0116B34848F152EF2CD86C5B061CE74' not in current validator set'
-        // deps.querier.update_staking("ustake", &[sample_validator(VALIDATOR1),sample_validator(VALIDATOR2),sample_validator(VALIDATOR3)], &[]);
-        // add_3_validators(&mut app, &staking_contract, Addr::unchecked(MANAGER1), VALIDATOR1.into(), VALIDATOR2.into(), VALIDATOR3.into());
 
-        // let validator1_info = get_validator_info(&app, &staking_contract, VALIDATOR1.into());
-        // assert_eq!(validator1_info, 
-        //     ValidatorInfo{ 
-        //         bond_denom: NATIVE_DENOM.into(), 
-        //         unbonding_period: WEEK, 
-        //         bonded: 0, 
-        //         unbonding: 0, 
-        //     }
-        // )
+        // Make sure we withdrew the rewards and there are none left.
+        // let no_rewards = query_rewards(&app, staking_contract.addr().as_str(), VALIDATOR1);
+        // assert!(no_rewards.is_none());
+
+        // //Unbond NFT_ID1 that bonded 600 
+        // let msg = ExecuteMsg::Unbond { nft_id: Uint128::from(NFT_ID1), amount: Uint128::from(600u128) };
+        // app.execute_contract(Addr::unchecked(AGENT1), staking_contract.addr(), &msg, &[]).unwrap();
+    
+        
+
+        // //move block year a head
+        // app.update_block(|block| block.time = block.time.plus_seconds(60 * 60 * 24 * 365));
+
+
+
+
+
+
+        
     }
 
 }
