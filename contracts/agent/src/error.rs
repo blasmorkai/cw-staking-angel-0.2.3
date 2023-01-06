@@ -39,11 +39,17 @@ pub enum ContractError {
     #[error("NFT only supports one native coin")]
     OnlyOneNativeCoinPerNFT {},
 
-    #[error("Unable to create NFT")]
-    UnableCreateNFT {},
+    #[error("Unable to mint NFT")]
+    UnableMintNFT {},
 
-    #[error("Unable to updae NFT Metadata")]
+    #[error("Unable to update NFT Metadata")]
     UnableUpdateNFTMetadata {},
+    
+    #[error("Unable to stake based on a newly minted NFT")]
+    UnableToStakeBondNewNFT {},
+    
+    #[error("Unable to stake based on a rebonded/updated NFT")]
+    UnableToStakeReBondNFT {},
     
     #[error("NFT amount mismatch nft: {nft}  staking: {staking}")]
     NFTStakingMismatch { staking: String, nft:String }
