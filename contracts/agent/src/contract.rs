@@ -1,4 +1,5 @@
 use std::fmt::format;
+use std::str::FromStr;
 use std::{vec};
 
 // #[cfg(not(feature = "library"))]
@@ -15,7 +16,7 @@ use cw_utils::{one_coin, PaymentError, Duration, parse_reply_instantiate_data,};
 
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, InstantiateMsg,  QueryMsg};
-use crate::state::{STAKING, NFT, NFT_ID};
+use crate::state::{STAKING, NFT, NFT_ID, CACHE_NFT, CacheNFT};
 use crate::wasm_query::{get_cw721_update_metadata_msg, get_cw721_mint_msg, get_cw721_burn_msg, get_staking_bond_msg,
                         get_staking_unbond_msg, get_staking_claim_msg, get_nft_owner, get_nft_metadata , get_staking_bonded };
 use nft::contract::{Metadata, Status};
@@ -28,6 +29,7 @@ const INSTANTIATE_NFT_REPLY_ID: u64 = 0;
 const INSTANTIATE_STAKING_REPLY_ID: u64 = 1;
 const EXECUTE_NEW_BOND_NFT_REPLY_ID: u64 = 2;
 const EXECUTE_RE_BOND_NFT_REPLY_ID: u64 = 3;
+const EXECUTE_UNBOND_NFT_REPLY_ID: u64 = 4;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -116,7 +118,6 @@ pub fn execute(
 //     pub status: Status,
 // }
 pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<String>) -> Result<Response, ContractError>{
-
     let d_coin = match one_coin(&info) {
         Ok(coin) => coin,
         Err(err) => {
@@ -162,11 +163,23 @@ pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<
 
             extension.native[0].amount = extension.native[0].amount.checked_add(d_coin.amount).unwrap();
 
+            let nft_id_uint128 = Uint128::from_str(&nft_id)?;
             // Create a new metadata, adding the amount.
             nft_id_info = format!("Rebond nft_id {}", nft_id.clone());
-            reply_key = EXECUTE_RE_BOND_NFT_REPLY_ID;
 
-            get_cw721_update_metadata_msg(nft_id, None, extension, &Addr::unchecked(nft_contract_addr))?
+            // Storing info to be used on the reply entry point
+            let extension = Metadata { native: vec![d_coin], status: Status::Bonded };
+            let cache_nft = CacheNFT { sender: info.sender, nft_id, extension };
+            CACHE_NFT.save(deps.storage, &cache_nft )?;
+
+            reply_key = EXECUTE_RE_BOND_NFT_REPLY_ID;
+            let bond_msg = staking::msg::ExecuteMsg::Bond { nft_id: nft_id_uint128 };
+            WasmMsg::Execute {
+                contract_addr: staking_contract_addr.into(),
+                msg: to_binary(&bond_msg)?,
+                funds: info.funds,
+            }
+
         },
         None => {
             let current_nft_id = NFT_ID.load(deps.storage)?;
@@ -174,9 +187,19 @@ pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<
             NFT_ID.update(deps.storage, |nft_id| -> Result<_, ContractError> {
                 Ok(nft_id + Uint128::from(1u128))
             })?;
+
+            // Storing info to be used on the reply entry point
             let extension = Metadata { native: vec![d_coin], status: Status::Bonded };
+            let cache_nft = CacheNFT { sender: info.sender, nft_id: current_nft_id.to_string(), extension };
+            CACHE_NFT.save(deps.storage, &cache_nft )?;
+
             reply_key = EXECUTE_NEW_BOND_NFT_REPLY_ID;
-            get_cw721_mint_msg(&info.sender, current_nft_id.to_string(), None,extension, &Addr::unchecked(nft_contract_addr))?
+            let bond_msg = staking::msg::ExecuteMsg::Bond { nft_id: current_nft_id };
+            WasmMsg::Execute {
+                contract_addr: staking_contract_addr.into(),
+                msg: to_binary(&bond_msg)?,
+                funds: info.funds,
+            }
         }
     };
 
@@ -190,16 +213,19 @@ pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<
 }
 
 pub fn execute_unbond(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{
-    Ok(Response::new()) 
+    
+    
+    let submsg:SubMsg<Empty>;
+    Ok(Response::new()
+        .add_attribute("action", "execute_unbond")
+        .add_attribute("nft_id_info", nft_id)
+        .add_submessage(submsg)
+    )
 }
 
 pub fn execute_claim(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{
     Ok(Response::new()) 
 }
-
-
-
-
 
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -213,14 +239,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, ContractError> {
 
+    let mut another_reply = false;
+    let wasm_msg : WasmMsg;
+
     match (reply.clone().id, reply.clone().result) {
         (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Ok(_))=> {
             let res = parse_reply_instantiate_data(reply.clone()).unwrap();  
             let addr = deps.api.addr_validate(res.contract_address.clone().as_str())?;
             NFT.save(deps.storage, &addr.to_string())?;
-
-
-            // Here I create another submessage and instantiate the second contract
         },
         (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Err(_))=> {
             return Err(ContractError::NFTContractNotInstantiated {  });
@@ -233,10 +259,31 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
         (INSTANTIATE_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{
             return Err(ContractError::StakingContractNotInstantiated {  })
         },
+        (EXECUTE_NEW_BOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{
+            another_reply = true;
+            let cache_nft = CACHE_NFT.load(deps.storage)?;
+            wasm_msg = get_cw721_mint_msg(&cache_nft.sender, cache_nft.nft_id, None,cache_nft.extension, &Addr::unchecked(NFT.load(deps.storage)?))?       
+        },
+        (EXECUTE_NEW_BOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{
+            return Err(ContractError::StakingContractNotInstantiated {  })
+        },
+        (EXECUTE_RE_BOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{
+            another_reply = true;
+            let cache_nft = CACHE_NFT.load(deps.storage)?;
+            wasm_msg = get_cw721_update_metadata_msg(cache_nft.nft_id, None, cache_nft.extension, &Addr::unchecked(NFT.load(deps.storage)?))?        
+        },
+        (EXECUTE_RE_BOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{
+            return Err(ContractError::UnableUpdateNFTMetadata {  })
+        },
         (_ , _) => {
             return Err(ContractError::UnknownReplyIdSubMsgResult { id: reply.id.to_string() });      
         },
       };
+
+     if another_reply {
+
+     } 
+
      Ok(Response::new()
     .add_attribute("action", "reply_handled")
     .add_attribute("reply_id", reply.id.to_string())

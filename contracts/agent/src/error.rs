@@ -38,6 +38,12 @@ pub enum ContractError {
 
     #[error("NFT only supports one native coin")]
     OnlyOneNativeCoinPerNFT {},
+
+    #[error("Unable to create NFT")]
+    UnableCreateNFT {},
+
+    #[error("Unable to updae NFT Metadata")]
+    UnableUpdateNFTMetadata {},
     
     #[error("NFT amount mismatch nft: {nft}  staking: {staking}")]
     NFTStakingMismatch { staking: String, nft:String }

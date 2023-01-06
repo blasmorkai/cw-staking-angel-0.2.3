@@ -180,3 +180,7 @@ pub fn get_staking_bonded (deps: Deps, nft_id: String, staking_contract_addr: &S
 //    let remove_validator_cosmos_msg: CosmosMsg = remove_validator_exec.into();
 //    Ok(remove_validator_cosmos_msg)
 // }
+
+
+
+
