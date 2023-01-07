@@ -363,11 +363,8 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
     let sender = deps.api.addr_validate(&sender)?;
     let can_be_bonded_denom = deps.querier.query_bonded_denom()?;
 
-    let test_query_claim = CLAIMS.query_claims(deps.as_ref(), &Addr::unchecked(nft_id))?;
-    println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> test_query_claim: {:?}", test_query_claim );
-
+    //let test_query_claim = CLAIMS.query_claims(deps.as_ref(), &Addr::unchecked(nft_id))?;
     let to_send = CLAIMS.claim_tokens(deps.storage, &Addr::unchecked(nft_id), &env.block, None)?;
-    println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> to_send: {:?}", to_send );
 
     if to_send == Uint128::zero() {
         return Err(ContractError::NothingToClaim {});
@@ -383,8 +380,6 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
     let mut balance = deps
         .querier
         .query_balance(&env.contract.address, &can_be_bonded_denom)?;
-
-    println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> contract balance: {:?}", balance );
 
     if balance.amount < to_send {
         return Err(ContractError::BalanceTooSmall {});
@@ -602,7 +597,7 @@ fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Res
 
     let treasury_addr = TREASURY.load(deps.storage)?;
 
-    let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
+   let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
 
     let msgs = msgs?;
     let res = Response::new()
@@ -689,7 +684,7 @@ mod tests {
         mock_dependencies, mock_env, mock_info, MockQuerier, MOCK_CONTRACT_ADDR,
     };
     use cosmwasm_std::{
-        coins, Coin, CosmosMsg, Decimal, FullDelegation, Validator, from_binary, Delegation, StdError, attr
+        coins, Coin, CosmosMsg, Decimal, FullDelegation, Validator, from_binary, Delegation, StdError, 
     };
     use cw_controllers::Claim;
     use cw_utils::{Duration, DAY, HOUR, WEEK};

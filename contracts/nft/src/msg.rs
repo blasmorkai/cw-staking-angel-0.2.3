@@ -1,10 +1,8 @@
 use cosmwasm_std::{Binary, Empty};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cw721_base::MintMsg;
-use schemars::JsonSchema;
 use cw721_base::msg::QueryMsg as Cw721QueryMsg;
 use cw721_base::ExecuteMsg as Cw721ExecuteMsg;
-use serde::{Serialize, Deserialize};
 
 use crate::contract::Metadata;
 

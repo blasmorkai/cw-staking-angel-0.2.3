@@ -9,7 +9,7 @@ repository    = ""
 homepage      = ""
 documentation = ""
 authors       = [
-  "Sara NP <?????>",
+  "Sara NP <sara.neves.pereira@gmail.com>",
   "Blas Morkai <blas.morkai@gmail.com>",
 ]
 
@@ -30,7 +30,7 @@ cw-multi-test = "0.16.1"
 cw-controllers = "1.0.0"
 
 
-[profile.release.package.angel-staking]
+[profile.release.package.staking]
 codegen-units = 1
 incremental = false
 

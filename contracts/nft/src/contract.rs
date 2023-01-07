@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Empty, Coin, Uint128};
+use cosmwasm_std::{Empty, Coin};
 use cw2::set_contract_version;
 pub use cw721_base::{Cw721Contract, ContractError, InstantiateMsg, MintMsg, MinterResponse};
 
@@ -138,7 +138,7 @@ mod tests {
         entry::instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg).unwrap();
 
         let token_id = "1";
-        let token_uri = "json";
+        // let token_uri = "json";
         let mint_msg = MintMsg {
             token_id: token_id.to_string(),
             owner: "bob".to_string(),
@@ -188,7 +188,7 @@ mod tests {
         entry::execute(deps.as_mut(), mock_env(), info.clone(), exec_msg.into()).unwrap();
 
 
-        let old_metadata = Metadata {
+        let _old_metadata = Metadata {
             native: coins(1000, "earth"),
             status: Status::Bonded,
         };

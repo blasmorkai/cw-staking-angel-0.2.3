@@ -2,8 +2,8 @@
 mod tests {
     use crate::{msg::{ExecuteMsg}, contract::{Metadata, Status}};
     use crate::helpers::{NftContract};
-    use cosmwasm_std::{coin, coins, to_binary, Addr, Coin, Empty, Uint128};
-    use cw721::{OwnerOfResponse, NftInfoResponse};
+    use cosmwasm_std::{coins, Addr, Coin, Empty, Uint128};
+    use cw721::{ NftInfoResponse};
     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 
 
