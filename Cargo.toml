@@ -9,12 +9,12 @@ repository    = ""
 homepage      = ""
 documentation = ""
 authors       = [
-  "Sara NP <?????>",
+  "Sara NP <sara.neves.pereira@gmail.com>",
   "Blas Morkai <blas.morkai@gmail.com>",
 ]
 
 [workspace.dependencies]
-cosmwasm-schema = "1.1.9"
+cosmwasm-schema = "1.1.6"
 cosmwasm-std    = "1.1.5"
 cw2             = "1.0.0"
 cw20            = "1.0.0"
@@ -30,13 +30,18 @@ cw-multi-test = "0.16.1"
 cw-controllers = "1.0.0"
 
 
-[profile.release.package.angel-staking]
+[profile.release.package.staking]
 codegen-units = 1
 incremental = false
 
 [profile.release.package.nft]
 codegen-units = 1
 incremental = false
+
+[profile.release.package.agent]
+codegen-units = 1
+incremental = false
+
 
 [profile.release]
 rpath = false

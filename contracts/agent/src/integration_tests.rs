@@ -22,6 +22,18 @@ mod tests {
         Box::new(contract)
     }
 
+    // pub fn contract_amm() -> Box<dyn Contract<Empty>> {
+    //     let contract = ContractWrapper::new(
+    //         crate::contract::execute,
+    //         crate::contract::instantiate,
+    //         crate::contract::query,
+    //     )
+    //     .with_reply(crate::contract::reply)
+    //     .with_migrate(crate::contract::migrate);
+    //     Box::new(contract)
+    // }
+
+
 
     fn mock_app() -> App {
         AppBuilder::new().build(|router, _, storage| {
@@ -56,20 +68,20 @@ mod tests {
         (app, code_id_nft)
     }
 
-    pub fn agent_angel_instantiate(app: &mut App, code_id: u64, agent: String, manager: String, treasury: String,) -> AgentContract {
-        let msg = InstantiateMsg{ nft: todo!(), staking: todo!() };
-        let contract = app
-            .instantiate_contract(
-                code_id,
-                Addr::unchecked(MANAGER1),
-                &msg,
-                &[],
-                "angel-staking",
-                None,
-            )
-            .unwrap();
-        AgentContract(contract)
-    }
+    // pub fn agent_angel_instantiate(app: &mut App, code_id: u64, agent: String, manager: String, treasury: String,) -> AgentContract {
+    //     let msg = InstantiateMsg{ nft: todo!(), staking: todo!() };
+    //     let contract = app
+    //         .instantiate_contract(
+    //             code_id,
+    //             Addr::unchecked(MANAGER1),
+    //             &msg,
+    //             &[],
+    //             "angel-staking",
+    //             None,
+    //         )
+    //         .unwrap();
+    //     AgentContract(contract)
+    // }
 
  
 

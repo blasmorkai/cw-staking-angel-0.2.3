@@ -1,25 +1,23 @@
 use cosmwasm_std::{Binary, Empty};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cw721_base::MintMsg;
-use schemars::JsonSchema;
 use cw721_base::msg::QueryMsg as Cw721QueryMsg;
 use cw721_base::ExecuteMsg as Cw721ExecuteMsg;
-use serde::{Serialize, Deserialize};
 
 use crate::contract::Metadata;
 
-#[cw_serde]
-pub struct InstantiateMsg {
-    /// Name of the NFT contract
-    pub name: String,
-    /// Symbol of the NFT contract
-    pub symbol: String,
+// #[cw_serde]
+// pub struct InstantiateMsg {
+//     /// Name of the NFT contract
+//     pub name: String,
+//     /// Symbol of the NFT contract
+//     pub symbol: String,
 
-    /// The minter is the only one who can create new NFTs.
-    /// This is designed for a base NFT that is controlled by an external program
-    /// or contract. You will likely replace this with custom logic in custom NFTs
-    pub minter: String,
-}
+//     /// The minter is the only one who can create new NFTs.
+//     /// This is designed for a base NFT that is controlled by an external program
+//     /// or contract. You will likely replace this with custom logic in custom NFTs
+//     pub minter: String,
+// }
 
 
 

@@ -2,8 +2,8 @@
 mod tests {
     use crate::{msg::{ExecuteMsg}, contract::{Metadata, Status}};
     use crate::helpers::{NftContract};
-    use cosmwasm_std::{coin, coins, to_binary, Addr, Coin, Empty, Uint128};
-    use cw721::{OwnerOfResponse, NftInfoResponse};
+    use cosmwasm_std::{coins, Addr, Coin, Empty, Uint128};
+    use cw721::{ NftInfoResponse};
     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 
 
@@ -132,7 +132,7 @@ mod tests {
         );
 
         let metadata = Metadata{ 
-            native: Some(coins(1000, NATIVE_DENOM)), 
+            native: coins(1000, NATIVE_DENOM), 
             status: Status::Bonded };
 
         //mint NFT to User
@@ -162,7 +162,7 @@ mod tests {
         // let owner = get_owner()
 
         let new_metadata = Metadata{ 
-            native: Some(coins(2000, NATIVE_DENOM)), 
+            native: coins(2000, NATIVE_DENOM), 
             status: Status::Bonded };
             
         let msg:ExecuteMsg = crate::msg::ExecuteMsg::UpdateMetadata { 
