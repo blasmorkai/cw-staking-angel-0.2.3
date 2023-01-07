@@ -33,6 +33,8 @@ const EXECUTE_NEW_BOND_NFT_REPLY_ID: u64 = 4;
 const EXECUTE_RE_BOND_NFT_REPLY_ID: u64 = 5;
 const EXECUTE_UNBOND_NFT_REPLY_ID: u64 = 6;
 const EXECUTE_UNBOND_STAKING_REPLY_ID: u64 = 7;
+const EXECUTE_CLAIM_NFT_REPLY_ID: u64 = 8;
+const EXECUTE_CLAIM_STAKING_REPLY_ID: u64 = 9;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -120,7 +122,7 @@ pub fn execute(
 //     pub native: Vec<Coin>,
 //     pub status: Status,
 // }
-pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<String>) -> Result<Response, ContractError>{
+pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option<String>) -> Result<Response, ContractError>{
     let d_coin = match one_coin(&info) {
         Ok(coin) => coin,
         Err(err) => {
@@ -215,7 +217,7 @@ pub fn execute_bond (deps: DepsMut, env: Env, info: MessageInfo, nft_id: Option<
     )
 }
 
-pub fn execute_unbond(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{
+pub fn execute_unbond(deps: DepsMut, _env: Env, info: MessageInfo, nft_id: String)-> Result<Response, ContractError>{
 
     let nft_contract_addr = NFT.load(deps.storage)?;
     let owner = get_nft_owner(deps.as_ref(), nft_id.clone(), &nft_contract_addr)?;
@@ -249,8 +251,33 @@ pub fn execute_unbond(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-
     )
 }
 
-pub fn execute_claim(deps: DepsMut, env:Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{
-    Ok(Response::new()) 
+pub fn execute_claim(deps: DepsMut, _env: Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{
+    let nft_contract_addr = NFT.load(deps.storage)?;
+    let owner = get_nft_owner(deps.as_ref(), nft_id.clone(), &nft_contract_addr)?;
+    if owner != info.sender {
+        return Err(ContractError::NotOwnerNFT {  })
+    };
+    let staking_contract_addr= STAKING.load(deps.storage)?;
+    let extension = get_nft_metadata(deps.as_ref(), nft_id.clone(), &nft_contract_addr)?;
+    let nft_amount = extension.native[0].amount;
+    let nft_id_uint128 = Uint128::from_str(&nft_id)?;
+
+    let claim_msg= staking::msg::ExecuteMsg::Claim { nft_id:nft_id_uint128, sender:info.sender.clone().into(), amount:nft_amount };
+    let claim_wasm_msg = WasmMsg::Execute {
+        contract_addr: staking_contract_addr,
+        msg: to_binary(&claim_msg)?,
+        funds: vec![],
+    };
+    let cache_nft = CacheNFT { sender: info.sender, nft_id: nft_id.clone(), extension };
+    CACHE_NFT.save(deps.storage, &cache_nft )?;
+
+    let submsg:SubMsg<Empty> = SubMsg::reply_always(claim_wasm_msg, EXECUTE_CLAIM_STAKING_REPLY_ID);
+
+    Ok(Response::new()
+    .add_attribute("action", "execute_claim")
+    .add_attribute("nft_id", nft_id)
+    .add_submessage(submsg)
+)
 }
 
 
@@ -317,17 +344,27 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
             submsg= SubMsg::reply_always(wasm_msg, reply_key);  
             vec_submsg.push(submsg);           
         },
+        (EXECUTE_CLAIM_STAKING_REPLY_ID, SubMsgResult::Ok(_))=>{
+            let cache_nft = CACHE_NFT.load(deps.storage)?;
+            reply_key = EXECUTE_CLAIM_NFT_REPLY_ID;
+            wasm_msg = get_cw721_burn_msg(cache_nft.nft_id, &Addr::unchecked(NFT.load(deps.storage)?))?;
+            submsg= SubMsg::reply_always(wasm_msg, reply_key);  
+            vec_submsg.push(submsg);           
+        },
         (EXECUTE_NEW_BOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
         (EXECUTE_RE_BOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
         (EXECUTE_UNBOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
+        (EXECUTE_CLAIM_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
         (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Err(_))=> {return Err(ContractError::NFTContractNotInstantiated {  });},
         (INSTANTIATE_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::StakingContractNotInstantiated {  })},
         (EXECUTE_NEW_BOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{ return Err(ContractError::UnableMintNFT {  } ) },
         (EXECUTE_RE_BOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{  return Err(ContractError::UnableUpdateNFTMetadata {  }) },
+        (EXECUTE_UNBOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToUnbondNFT {  })}, 
+        (EXECUTE_CLAIM_NFT_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToBurnNFT {  }) },       
         (EXECUTE_NEW_BOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToStakeBondNewNFT {  })},
         (EXECUTE_RE_BOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToStakeReBondNFT {  })},
         (EXECUTE_UNBOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToUnbondStaking {  }) },
-        (EXECUTE_UNBOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToUnbondNFT {  })},
+        (EXECUTE_CLAIM_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToClaimStaking {  }) },
         (_ , _) => { return Err(ContractError::UnknownReplyIdSubMsgResult { id: reply.id.to_string() });   },
       }
 
