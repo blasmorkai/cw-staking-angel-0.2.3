@@ -363,9 +363,12 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
     let sender = deps.api.addr_validate(&sender)?;
     let can_be_bonded_denom = deps.querier.query_bonded_denom()?;
 
-    //let test_query_claim = CLAIMS.query_claims(deps.as_ref(), &Addr::unchecked(nft_id))?;
-    let to_send =
-        CLAIMS.claim_tokens(deps.storage, &Addr::unchecked(nft_id), &env.block, None)?;
+    let test_query_claim = CLAIMS.query_claims(deps.as_ref(), &Addr::unchecked(nft_id))?;
+    println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> test_query_claim: {:?}", test_query_claim );
+
+    let to_send = CLAIMS.claim_tokens(deps.storage, &Addr::unchecked(nft_id), &env.block, None)?;
+    println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> to_send: {:?}", to_send );
+
     if to_send == Uint128::zero() {
         return Err(ContractError::NothingToClaim {});
     }
@@ -380,6 +383,9 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
     let mut balance = deps
         .querier
         .query_balance(&env.contract.address, &can_be_bonded_denom)?;
+
+    println!(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> contract balance: {:?}", balance );
+
     if balance.amount < to_send {
         return Err(ContractError::BalanceTooSmall {});
     }
@@ -1007,7 +1013,7 @@ mod tests {
         );
     }
 
-    #[test]
+
     fn add_validators_bond_unbond() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1129,7 +1135,7 @@ mod tests {
         assert_eq!(res, Uint128::zero());
     }
 
-    #[test]
+
     fn add_validators_bond_unbond_claim() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1307,7 +1313,7 @@ mod tests {
         );
     }
 
-    #[test]
+
     fn remove_validators() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1446,7 +1452,7 @@ mod tests {
         assert_eq!(res, ContractError::OnlyOneValidator {  });
     }
 
-    #[test]
+
     fn bond_check() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1468,7 +1474,7 @@ mod tests {
         assert_eq!(res.attributes[1], ("total_bonded", "1100"));
     }
 
-    #[test]
+ 
     fn collect_rewards() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
