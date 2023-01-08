@@ -1,13 +1,10 @@
 use std::str::FromStr;
 use std::{vec};
 
-// #[cfg(not(feature = "library"))]
-use cosmwasm_std::{
-     to_binary, Addr, Binary, Deps, DepsMut, Env,
-    MessageInfo, Response, StdResult, Uint128,
-     SubMsg, entry_point, WasmMsg, Reply,
-    SubMsgResult, Empty,
-};
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
+use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, SubMsg, WasmMsg, Reply,
+    SubMsgResult, Empty,};
 
 use cw2::set_contract_version;
 use cw_utils::{one_coin, PaymentError, parse_reply_instantiate_data,};
