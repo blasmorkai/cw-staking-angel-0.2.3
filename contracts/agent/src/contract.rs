@@ -16,6 +16,7 @@ use crate::state::{STAKING, NFT, NFT_ID, CACHE_NFT, CacheNFT};
 use crate::wasm_query::{get_cw721_update_metadata_msg, get_cw721_mint_msg, get_cw721_burn_msg, get_nft_owner, get_nft_metadata , get_staking_bonded };
 use nft::contract::{Metadata, Status};
 
+
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-agent-angel";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
