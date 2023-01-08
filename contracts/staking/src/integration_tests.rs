@@ -214,7 +214,7 @@ mod tests {
         );
         // Initial AGENT1 balance
         let balance = get_balance(&app, AGENT1.to_string(), NATIVE_DENOM.to_string());
-        assert_eq!(balance.amount,Uint128::from(50000u128) );
+        assert_eq!(balance.amount,Uint128::from(5000u128) );
 
         // Bond 3 NFTs
         let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID1) };
@@ -244,16 +244,32 @@ mod tests {
         // VALIDATOR1 has got 600 tokens staked
        let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR1).unwrap();
        assert_eq!(full_delegation.amount.amount,Uint128::from(600u128));
+       let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR2).unwrap();
+       assert_eq!(full_delegation.amount.amount,Uint128::from(400u128));
+       let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR3).unwrap();
+       assert_eq!(full_delegation.amount.amount,Uint128::from(200u128));
  
+       // No upbonding or rewards have been received by contract
+        let balance = get_balance(&app, staking_contract.addr().to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount, Uint128::zero());
+
        // Undelegating 600 will split the amount between the two validator with the most tokens staked.
        // Unbonding 300 from VALIDATOR1 (600 - 300 = 300) AND 300 from VALIDATOR2 (400 - 300 = 100) 
        let msg = ExecuteMsg::Unbond { nft_id: Uint128::from(NFT_ID1), amount: Uint128::from(600u128) };
         app.execute_contract(Addr::unchecked(AGENT1), staking_contract.addr(), &msg, &[]).unwrap();
  
+        // QUESTION: THIS SHOULD GIVE A BALANCE OF THE UNBONDED TOKENS RECEIVED BY THE CONTRACT AFTER THE UNBONDING PERIOD
+        // app.update_block(|block| block.time = block.time.plus_seconds( 3 ));
+        // let balance = get_balance(&app, staking_contract.addr().to_string(), NATIVE_DENOM.to_string());
+        // assert_ne!(balance.amount, Uint128::zero());
+
+        // After Unbonding, the tokens delegated have changed
         let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR1).unwrap();
         assert_eq!(full_delegation.amount.amount,Uint128::from(300u128));
         let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR2).unwrap();
         assert_eq!(full_delegation.amount.amount,Uint128::from(100u128));
+        let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR3).unwrap();
+        assert_eq!(full_delegation.amount.amount,Uint128::from(200u128));
         // Same as previous, but data queried from the contract itself (as opposed to querying the network as before)
         let bonded_validator = get_bonded_on_validator(&app, &staking_contract, VALIDATOR1).unwrap();
         assert_eq!(bonded_validator, Uint128::from(300u128));       
@@ -289,6 +305,7 @@ mod tests {
         assert_eq!(rewards,Some(Uint128::from(20u128)));
 
         //Collect the rewards can not be tested because of: Unsupported distribution message: SetWithdrawAddress { address: ..}
+        // Tested on this contract without SetWithdrawAddress works for the following code
         // let msg = ExecuteMsg::CollectAngelRewards {  };
         // app.execute_contract(Addr::unchecked(MANAGER1), staking_contract.addr(), &msg, &[]).unwrap();
         // let balance = get_balance(&app, staking_contract.addr().to_string(), NATIVE_DENOM.to_string());

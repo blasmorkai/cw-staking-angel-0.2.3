@@ -597,6 +597,7 @@ fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Res
 
     let treasury_addr = TREASURY.load(deps.storage)?;
 
+   // QUESTION: Setting the address to receive the rewards. Do this affect who does receive the unbonding tokens?
    let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
 
     let msgs = msgs?;

@@ -5,21 +5,12 @@ use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, CustomQuery, Querier, QuerierWrapper, StdResult, WasmMsg, WasmQuery,
 };
 
-//use crate::msg::{ExecuteMsg, };
-
 pub use cw721::{OwnerOfResponse, TokensResponse, NftInfoResponse};
-// pub use cw721_base::QueryMsg;
-// use cw721_base::ExecuteMsg;
 
 use crate::contract::Metadata;
 pub use crate::msg::QueryMsg;
 pub use crate::msg::ExecuteMsg;
 
-
-// use crate::msg::ExecuteMsg;
-
-/// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
-/// for working with this.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct NftContract(pub Addr);
 
@@ -29,7 +20,7 @@ impl NftContract {
     }
 
     pub fn call<T: Into<ExecuteMsg>>(&self, msg: T) -> StdResult<CosmosMsg> {
-        let msg = to_binary(&msg.into())?;              //2) <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        let msg = to_binary(&msg.into())?;             
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
             msg,
