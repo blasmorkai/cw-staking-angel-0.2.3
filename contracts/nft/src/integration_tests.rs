@@ -144,12 +144,12 @@ mod tests {
         };
 
         let msg:ExecuteMsg = crate::msg::ExecuteMsg::Mint(mint_msg);
-        let cosmos_msg = cw721_contract.call(msg).unwrap();  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        let cosmos_msg = cw721_contract.call(msg).unwrap(); 
         app.execute(Addr::unchecked(MINTER), cosmos_msg).unwrap();
 
         let res = get_nft_info(&app, &cw721_contract, "0".to_string());
         assert_eq!(res.extension, metadata);
-        println!("{:?}", res);
+        //println!("{:?}", res);
          //check to see if User is the owner.
         //  let owner = get_owner(&app, &cw721_contract, "0".to_string());
         //  assert_eq!(owner.owner, USER1.to_string());
@@ -174,12 +174,8 @@ mod tests {
         let cosmos_msg = cw721_contract.call(msg).unwrap();
         app.execute(Addr::unchecked(MINTER), cosmos_msg).unwrap();        
 
-
         let res = get_nft_info(&app, &cw721_contract, "0".to_string());
         assert_eq!(res.extension, new_metadata);
-        println!("{:?}", res);
-
-
     }
 
 }

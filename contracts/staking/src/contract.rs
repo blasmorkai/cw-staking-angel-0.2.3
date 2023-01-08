@@ -1,6 +1,6 @@
 use std::{vec};
 
-// #[cfg(not(feature = "library"))]
+ #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     coin, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
@@ -356,6 +356,7 @@ pub fn calc_validator_number(number_validators: Uint64, _amount: Uint128) -> Std
 }
 
 pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128, sender: String, amount: Uint128) -> Result<Response, ContractError> {
+    println!("---------------------------------> CLAIMING ARRIVED");
     let agent = AGENT.load(deps.storage)?;
     if info.sender != agent {
         return Err(ContractError::Unauthorized {});
@@ -404,7 +405,7 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
     let state = State::new();
     for (val_address, unbonding) in vec_val_unbonding {
         let mut validator_info = state.validator.load(deps.storage, &val_address)?;
-         validator_info.unbonding = validator_info.unbonding.checked_sub(unbonding.u128()).unwrap();
+        validator_info.unbonding = validator_info.unbonding.checked_sub(unbonding.u128()).unwrap();
         state.validator.save(deps.storage,&val_address,&validator_info)?;
     }   
 

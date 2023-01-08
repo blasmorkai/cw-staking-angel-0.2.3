@@ -136,13 +136,10 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
     let reply_key : u64;
     let nft_id_info: String;
 
-    println!("WELCOME WELCOME WELCOME WELCOME WELCOME WELCOME 1 {:?}", nft_id);
     let wasm_msg = match nft_id {
         Some(nft_id) => {
             // Query the nft contract and the staking contract, get the current amount staked. See that they match.
-            println!("WELCOME WELCOME WELCOME WELCOME WELCOME WELCOME c {:?}", nft_id);
             let owner = get_nft_owner(deps.as_ref(), nft_id.clone(), &nft_contract_addr)?;
-            println!("WELCOME WELCOME WELCOME WELCOME WELCOME WELCOME d {:?}", nft_id);
             if owner != info.sender {
                 return Err(ContractError::NotOwnerNFT {  })
             }
@@ -158,7 +155,6 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
             if extension.native[0].denom != d_coin.denom{
                 return Err(ContractError::OnlyOneNativeCoinPerNFT {  } )                 
             } 
-
             // This is reduntant but increases security of bugs in initial contract version. 
             // nft and staking contract must be aligned on the amount stored on the nft. 
             let extension_amount = extension.native[0].amount;
@@ -174,7 +170,7 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
             nft_id_info = format!("Rebond nft_id {}", nft_id.clone());
 
             // Storing info to be used on the reply entry point
-            let extension = Metadata { native: vec![d_coin], status: Status::Bonded };
+            let extension = Metadata { native: extension.native, status: Status::Bonded };
             let cache_nft = CacheNFT { sender: info.sender, nft_id, extension };
             CACHE_NFT.save(deps.storage, &cache_nft )?;
 
@@ -193,12 +189,10 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
             NFT_ID.update(deps.storage, |nft_id| -> Result<_, ContractError> {
                 Ok(nft_id + Uint128::from(1u128))
             })?;
-            println!("WELCOME WELCOME WELCOME WELCOME WELCOME WELCOME 2 {:?}", nft_id);
             // Storing info to be used on the reply entry point
             let extension = Metadata { native: vec![d_coin], status: Status::Bonded };
             let cache_nft = CacheNFT { sender: info.sender, nft_id: current_nft_id.to_string(), extension };
             CACHE_NFT.save(deps.storage, &cache_nft )?;
-            println!("WELCOME WELCOME WELCOME WELCOME WELCOME WELCOME 3 {:?}", nft_id);
             reply_key = EXECUTE_NEW_BOND_STAKING_REPLY_ID;
             let bond_msg = staking::msg::ExecuteMsg::Bond { nft_id: current_nft_id };
             WasmMsg::Execute {
@@ -208,7 +202,6 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
             }
         }
     };
-    println!("WELCOME WELCOME WELCOME WELCOME WELCOME WELCOME 4 ");
     let submsg:SubMsg<Empty> = SubMsg::reply_on_success(wasm_msg, reply_key);
     println!("SUBMSG     SUBMSG    SUBMSG    SUBMSG    SUBMSG    SUBMSG    SUBMSG    {:?}",submsg);
     Ok(Response::new()
@@ -253,11 +246,13 @@ pub fn execute_unbond(deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Strin
 }
 
 pub fn execute_claim(deps: DepsMut, _env: Env, info: MessageInfo, nft_id:String)-> Result<Response, ContractError>{
+    println!("---------------------------------> ARRIVED WITHOUT CHECKING");
     let nft_contract_addr = NFT.load(deps.storage)?;
     let owner = get_nft_owner(deps.as_ref(), nft_id.clone(), &nft_contract_addr)?;
     if owner != info.sender {
         return Err(ContractError::NotOwnerNFT {  })
     };
+    println!("---------------------------------> ARRIVED AFTER CHECKING");
     let staking_contract_addr= STAKING.load(deps.storage)?;
     let extension = get_nft_metadata(deps.as_ref(), nft_id.clone(), &nft_contract_addr)?;
     let nft_amount = extension.native[0].amount;
@@ -272,8 +267,9 @@ pub fn execute_claim(deps: DepsMut, _env: Env, info: MessageInfo, nft_id:String)
     let cache_nft = CacheNFT { sender: info.sender, nft_id: nft_id.clone(), extension };
     CACHE_NFT.save(deps.storage, &cache_nft )?;
 
-    let submsg:SubMsg<Empty> = SubMsg::reply_always(claim_wasm_msg, EXECUTE_CLAIM_STAKING_REPLY_ID);
+    let submsg:SubMsg<Empty> = SubMsg::reply_on_success(claim_wasm_msg, EXECUTE_CLAIM_STAKING_REPLY_ID);
 
+    println!("---------------------------------> CLAIMING GOING OUT");
     Ok(Response::new()
     .add_attribute("action", "execute_claim")
     .add_attribute("nft_id", nft_id)
@@ -383,7 +379,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
         (EXECUTE_NEW_BOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToStakeBondNewNFT {  })},
         (EXECUTE_RE_BOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToStakeReBondNFT {  })},
         (EXECUTE_UNBOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToUnbondStaking {  }) },
-        (EXECUTE_CLAIM_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToClaimStaking {  }) },
+ //       (EXECUTE_CLAIM_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToClaimStaking {  }) },
         (_ , _) => { return Err(ContractError::UnknownReplyIdSubMsgResult { id: reply.id.to_string() });   },
       }
 
