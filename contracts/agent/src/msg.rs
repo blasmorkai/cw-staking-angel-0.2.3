@@ -1,7 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
-use cosmwasm_std::{Uint128, Coin, FullDelegation, Delegation};
-
 #[cw_serde]
 pub struct InstantiateMsg {
    pub nft_code_id: u64,	

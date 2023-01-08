@@ -2,11 +2,10 @@
 mod tests {
     use crate::error::ContractError;
     use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-    use cw721::{OwnerOfResponse, NftInfoResponse};
     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor, StakingInfo};
     use nft::contract::{Metadata, Status};
-    use crate::helpers::{StakingContract, NFTContract, AgentContract };
-    use cosmwasm_std::{Addr, Coin, Empty, Uint128, Decimal, Validator, coin, FullDelegation, StdResult};
+    use crate::helpers::{AgentContract };
+    use cosmwasm_std::{Addr, Coin, Empty, Uint128, Decimal, Validator, coin,};
     use cosmwasm_std::testing::{ mock_env};
     use cw_utils::WEEK;
 
@@ -17,10 +16,6 @@ mod tests {
     const AGENT1: &str = "juno15urq2dtp9qce4fyc85m6upwm9xul30492fasy3";
    const TREASURY1: &str = "juno196ax4vc0lwpxndu9dyhvca7jhxp70rmcl99tyh";
     // const TREASURY1: &str = "treasur";
-
-    const NFT_ID1 :u128 = 1u128;
-    const NFT_ID2 :u128 = 2u128;
-    const NFT_ID3 :u128 = 3u128;
 
     // const VALIDATOR1: &str = "AD4AA82AD0116B34848F152EF2CD86C5B061CE74";
     const VALIDATOR1: &str = "validator1";

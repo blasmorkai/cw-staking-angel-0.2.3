@@ -356,7 +356,6 @@ pub fn calc_validator_number(number_validators: Uint64, _amount: Uint128) -> Std
 }
 
 pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128, sender: String, amount: Uint128) -> Result<Response, ContractError> {
-    println!("---------------------------------> CLAIMING ARRIVED");
     let agent = AGENT.load(deps.storage)?;
     if info.sender != agent {
         return Err(ContractError::Unauthorized {});
@@ -1010,7 +1009,7 @@ mod tests {
         );
     }
 
-
+    #[test]
     fn add_validators_bond_unbond() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1132,7 +1131,7 @@ mod tests {
         assert_eq!(res, Uint128::zero());
     }
 
-
+    #[test]
     fn add_validators_bond_unbond_claim() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1310,7 +1309,7 @@ mod tests {
         );
     }
 
-
+    #[test]
     fn remove_validators() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1449,7 +1448,7 @@ mod tests {
         assert_eq!(res, ContractError::OnlyOneValidator {  });
     }
 
-
+    #[test]
     fn bond_check() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1471,7 +1470,7 @@ mod tests {
         assert_eq!(res.attributes[1], ("total_bonded", "1100"));
     }
 
- 
+    #[test] 
     fn collect_rewards() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1492,7 +1491,7 @@ mod tests {
         assert_eq!(res.attributes[0], ("action", "withdraw_delegation_rewards"));
     }
 
-
+    #[test]
     fn _send_balance_treasury() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);

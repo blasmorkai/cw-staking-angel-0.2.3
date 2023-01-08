@@ -22,8 +22,7 @@ mod tests {
     const VALIDATOR3: &str = "validator3";
 
     const USER1: &str = "juno10c3slrqx3369mfsr9670au22zvq082jaejxx86";
-    // const ADMIN: &str = MANAGER1;
-    const ADMIN: &str = "ADMIN";
+    const _ADMIN: &str = "ADMIN";
 
     pub fn contract_staking() -> Box<dyn Contract<Empty>> {
         let contract = ContractWrapper::new(
