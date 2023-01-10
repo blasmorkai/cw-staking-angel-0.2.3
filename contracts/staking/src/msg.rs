@@ -24,8 +24,7 @@ pub enum ExecuteMsg {
     AddValidator {address: String, bond_denom: String, unbonding_period: Duration},
     RemoveValidator {address: String},
     BondCheck {},
-    CollectAngelRewards {},
-    TransferBalanceToTreasury{},
+    CollectAngelRewards {},    
 }
 
 
@@ -46,7 +45,9 @@ pub enum QueryMsg {
     #[returns(Uint128)]
     Unbonding {},
     #[returns(Uint128)]
-    BondedOnValidator {address: String},    
+    BondedOnValidator {address: String},  
+    #[returns(Uint128)]
+    BondedByNFT {nft_id: String},     
     #[returns(String)]
     Agent {},   
     #[returns(String)]
@@ -56,7 +57,8 @@ pub enum QueryMsg {
     #[returns(Option<FullDelegation>)]
     DelegationOnValidator {address:String},        
     #[returns(Vec<Delegation>)]
-    AllDelegations {},        
+    AllDelegations {},
+         
 }
 
 

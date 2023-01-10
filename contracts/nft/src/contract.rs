@@ -1,7 +1,9 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Empty, Coin, Uint128};
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
+use cosmwasm_std::{Empty, Coin, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 pub use cw721_base::{Cw721Contract, ContractError, InstantiateMsg, MintMsg, MinterResponse};
 
@@ -23,7 +25,7 @@ pub enum Status {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, )]
 pub struct Metadata {
-    pub native: Option<Vec<Coin>>,
+    pub native: Vec<Coin>,
     pub status: Status,
 }
 
@@ -39,8 +41,6 @@ pub mod entry {
     use crate::msg::{ExecuteMsg, QueryMsg};
 
     use super::*;
-
-    use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, entry_point};
 
     #[cfg_attr(not(feature = "library"), entry_point)]
     pub fn instantiate(
@@ -72,8 +72,8 @@ pub mod entry {
             ExecuteMsg::UpdateMetadata {
                 token_id,
                 token_uri,
-                metadata,
-            } => execute_update_metadata(deps, env, info, token_id, token_uri, metadata),
+                extension,
+            } => execute_update_metadata(deps, env, info, token_id, token_uri, extension),
             _ => cw721_base::Cw721Contract::execute(&contract, deps, env, info, msg.into()),
         }
     }
@@ -93,7 +93,7 @@ pub mod entry {
         _env: Env,
         info: MessageInfo,
         token_id: String,
-        token_uri: String,
+        token_uri: Option<String>,
         metadata: Metadata
     ) -> Result<Response, ContractError> {
         let contract: Cw721Contract<Extension, Empty, Empty, Empty> = cw721_base::Cw721Contract::default();
@@ -105,7 +105,7 @@ pub mod entry {
                 .tokens
                 .update(deps.storage, &token_id, |token| match token {
                     Some(mut token_info) => {
-                        token_info.token_uri = Some(token_uri.clone());
+                        token_info.token_uri = token_uri.clone();
                         token_info.extension = metadata;
                         Ok(token_info)
                     },
@@ -138,13 +138,13 @@ mod tests {
         entry::instantiate(deps.as_mut(), mock_env(), info.clone(), init_msg).unwrap();
 
         let token_id = "1";
-        let token_uri = "json";
+        // let token_uri = "json";
         let mint_msg = MintMsg {
             token_id: token_id.to_string(),
             owner: "bob".to_string(),
             token_uri: None,
             extension: Metadata {
-                native: Some(coins(1000, "earth")),
+                native: coins(1000, "earth"),
                 status: Status::Bonded,
             },
         };
@@ -179,7 +179,7 @@ mod tests {
             owner: "bob".to_string(),
             token_uri: None,
             extension: Metadata {
-                native: Some(coins(1000, "earth")),
+                native: coins(1000, "earth"),
                 status: Status::Bonded,
             },
         };
@@ -188,20 +188,20 @@ mod tests {
         entry::execute(deps.as_mut(), mock_env(), info.clone(), exec_msg.into()).unwrap();
 
 
-        let old_metadata = Metadata {
-            native: Some(coins(1000, "earth")),
+        let _old_metadata = Metadata {
+            native: coins(1000, "earth"),
             status: Status::Bonded,
         };
 
         let new_metadata = Metadata {
-            native: Some(coins(2000, "earth")),
+            native: coins(2000, "earth"),
             status: Status::Bonded,
         };
 
         let exec_msg = crate::msg::ExecuteMsg::UpdateMetadata { 
             token_id: token_id.to_string(), 
-            token_uri: token_uri.to_string(), 
-            metadata: new_metadata.clone() 
+            token_uri: Some(token_uri.to_string()), 
+            extension: new_metadata.clone() 
         };
 
         entry::execute(deps.as_mut(), mock_env(), info, exec_msg.into()).unwrap();

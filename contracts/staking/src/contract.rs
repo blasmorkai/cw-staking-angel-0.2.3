@@ -1,6 +1,6 @@
 use std::{vec};
 
-// #[cfg(not(feature = "library"))]
+ #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     coin, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
@@ -62,7 +62,6 @@ pub fn execute(
         ExecuteMsg::RemoveValidator { address } => execute_remove_validator (deps, env, info, address, ),
         ExecuteMsg::BondCheck {} => execute_bond_check(deps.as_ref(), env, info),
         ExecuteMsg::CollectAngelRewards {  } => execute_collect_rewards(deps, env, info),
-        ExecuteMsg::TransferBalanceToTreasury{  } => execute_transfer_balance(deps, env, info),
     }
 }
 
@@ -82,15 +81,18 @@ pub fn execute_bond(deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Uint128
             }
         },
     };
+
     let can_be_bonded_denom = deps.querier.query_bonded_denom()?;
     if d_coins.denom != can_be_bonded_denom {
         return Err(ContractError::InvalidCoin {  });       
     }
     let amount = d_coins.amount;
 
+
     let validator_address = chosen_validator(deps.as_ref(), None)?;
 
-    // Update bonded tokens to validator
+
+    //Update bonded tokens to validator
     let state = State::new();
     let mut validator_info = state.validator.load(deps.storage, &validator_address)?;
     validator_info.bonded = validator_info.bonded.checked_add(amount.u128()).unwrap();  
@@ -362,8 +364,8 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
     let can_be_bonded_denom = deps.querier.query_bonded_denom()?;
 
     //let test_query_claim = CLAIMS.query_claims(deps.as_ref(), &Addr::unchecked(nft_id))?;
-    let to_send =
-        CLAIMS.claim_tokens(deps.storage, &Addr::unchecked(nft_id), &env.block, None)?;
+    let to_send = CLAIMS.claim_tokens(deps.storage, &Addr::unchecked(nft_id), &env.block, None)?;
+
     if to_send == Uint128::zero() {
         return Err(ContractError::NothingToClaim {});
     }
@@ -378,6 +380,7 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
     let mut balance = deps
         .querier
         .query_balance(&env.contract.address, &can_be_bonded_denom)?;
+
     if balance.amount < to_send {
         return Err(ContractError::BalanceTooSmall {});
     }
@@ -401,7 +404,7 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
     let state = State::new();
     for (val_address, unbonding) in vec_val_unbonding {
         let mut validator_info = state.validator.load(deps.storage, &val_address)?;
-         validator_info.unbonding = validator_info.unbonding.checked_sub(unbonding.u128()).unwrap();
+        validator_info.unbonding = validator_info.unbonding.checked_sub(unbonding.u128()).unwrap();
         state.validator.save(deps.storage,&val_address,&validator_info)?;
     }   
 
@@ -594,7 +597,8 @@ fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Res
 
     let treasury_addr = TREASURY.load(deps.storage)?;
 
-    let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
+   // QUESTION: Setting the address to receive the rewards. Do this affect who does receive the unbonding tokens?
+   let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
 
     let msgs = msgs?;
     let res = Response::new()
@@ -604,7 +608,7 @@ fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Res
     Ok(res)
 }
 
-fn execute_transfer_balance (deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError>{
+fn _execute_transfer_balance (deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError>{
     let manager = MANAGER.load(deps.storage)?;
     if info.sender != manager {
         return Err(ContractError::Unauthorized {});
@@ -646,6 +650,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::RewardsBalance {  } => to_binary(&deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?),
         QueryMsg::AllDelegations {  } => to_binary(&deps.querier.query_all_delegations(env.contract.address)?),
         QueryMsg::DelegationOnValidator { address } => to_binary(&deps.querier.query_delegation(env.contract.address, address)?),
+        QueryMsg::BondedByNFT { nft_id } => to_binary(&NFT_BONDED.may_load(deps.storage,&nft_id)?.unwrap_or_default()),
     }
 }
 
@@ -680,7 +685,7 @@ mod tests {
         mock_dependencies, mock_env, mock_info, MockQuerier, MOCK_CONTRACT_ADDR,
     };
     use cosmwasm_std::{
-        coins, Coin, CosmosMsg, Decimal, FullDelegation, Validator, from_binary, Delegation, StdError, attr
+        coins, Coin, CosmosMsg, Decimal, FullDelegation, Validator, from_binary, Delegation, StdError, 
     };
     use cw_controllers::Claim;
     use cw_utils::{Duration, DAY, HOUR, WEEK};
@@ -1373,7 +1378,7 @@ mod tests {
         // VALIDATOR3 no longer registered
         let msg = QueryMsg::ValidatorInfo { address: VALIDATOR3.to_string() };
         let res = query(deps.as_ref(), mock_env(), msg).unwrap_err();
-        assert_eq!(res, StdError::NotFound { kind: "angel_staking::state::ValidatorInfo".to_string() });
+        assert_eq!(res, StdError::NotFound { kind: "staking::state::ValidatorInfo".to_string() });
 
         // add VALIDATOR3 again 
         let msg = ExecuteMsg::AddValidator { 
@@ -1465,7 +1470,7 @@ mod tests {
         assert_eq!(res.attributes[1], ("total_bonded", "1100"));
     }
 
-    #[test]
+    #[test] 
     fn collect_rewards() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1487,7 +1492,7 @@ mod tests {
     }
 
     #[test]
-    fn send_balance_treasury() {
+    fn _send_balance_treasury() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
         let env = mock_env();
@@ -1510,23 +1515,23 @@ mod tests {
         // Suppose the rewards received are 50
         deps.querier.update_balance(MOCK_CONTRACT_ADDR, coins(50, "ustake"));
 
-        let msg = ExecuteMsg::TransferBalanceToTreasury {  };
-        let res = execute(deps.as_mut(), env_later, info.clone(), msg).unwrap();
-        assert_eq!(res.attributes, vec![
-            attr("action", "transfer_balance"), 
-            attr("dst_addr", "treasury"), 
-            attr("denom","ustake"), 
-            attr("amount", "50")
-            ]
-        );
-        assert_eq!(res.messages[0].msg, 
-            CosmosMsg::Bank(
-                BankMsg::Send {
-                    to_address: TREASURY1.to_string(), 
-                    amount: vec![Coin { denom: "ustake".to_string(), amount: Uint128::from(50u128) }],
-                }
-            )
-        );    
+        // let msg = ExecuteMsg::TransferBalanceToTreasury {  };
+        // let res = execute(deps.as_mut(), env_later, info.clone(), msg).unwrap();
+        // assert_eq!(res.attributes, vec![
+        //     attr("action", "transfer_balance"), 
+        //     attr("dst_addr", "treasury"), 
+        //     attr("denom","ustake"), 
+        //     attr("amount", "50")
+        //     ]
+        // );
+        // assert_eq!(res.messages[0].msg, 
+        //     CosmosMsg::Bank(
+        //         BankMsg::Send {
+        //             to_address: TREASURY1.to_string(), 
+        //             amount: vec![Coin { denom: "ustake".to_string(), amount: Uint128::from(50u128) }],
+        //         }
+        //     )
+        // );    
     }
 
 }

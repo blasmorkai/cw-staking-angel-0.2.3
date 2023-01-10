@@ -2,8 +2,8 @@
 mod tests {
     use crate::{msg::{ExecuteMsg}, contract::{Metadata, Status}};
     use crate::helpers::{NftContract};
-    use cosmwasm_std::{coin, coins, to_binary, Addr, Coin, Empty, Uint128};
-    use cw721::{OwnerOfResponse, NftInfoResponse};
+    use cosmwasm_std::{coins, Addr, Coin, Empty, Uint128};
+    use cw721::{ NftInfoResponse};
     use cw_multi_test::{App, AppBuilder, Contract, ContractWrapper, Executor};
 
 
@@ -132,7 +132,7 @@ mod tests {
         );
 
         let metadata = Metadata{ 
-            native: Some(coins(1000, NATIVE_DENOM)), 
+            native: coins(1000, NATIVE_DENOM), 
             status: Status::Bonded };
 
         //mint NFT to User
@@ -144,12 +144,12 @@ mod tests {
         };
 
         let msg:ExecuteMsg = crate::msg::ExecuteMsg::Mint(mint_msg);
-        let cosmos_msg = cw721_contract.call(msg).unwrap();  // <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        let cosmos_msg = cw721_contract.call(msg).unwrap(); 
         app.execute(Addr::unchecked(MINTER), cosmos_msg).unwrap();
 
         let res = get_nft_info(&app, &cw721_contract, "0".to_string());
         assert_eq!(res.extension, metadata);
-        println!("{:?}", res);
+        //println!("{:?}", res);
          //check to see if User is the owner.
         //  let owner = get_owner(&app, &cw721_contract, "0".to_string());
         //  assert_eq!(owner.owner, USER1.to_string());
@@ -162,24 +162,20 @@ mod tests {
         // let owner = get_owner()
 
         let new_metadata = Metadata{ 
-            native: Some(coins(2000, NATIVE_DENOM)), 
+            native: coins(2000, NATIVE_DENOM), 
             status: Status::Bonded };
             
         let msg:ExecuteMsg = crate::msg::ExecuteMsg::UpdateMetadata { 
             token_id: TOKEN_ID.to_string(), 
-            token_uri: "token_uri_url2".to_string(), 
-            metadata: new_metadata .clone()
+            token_uri: Some("token_uri_url2".to_string()), 
+            extension: new_metadata .clone()
         };
 
         let cosmos_msg = cw721_contract.call(msg).unwrap();
         app.execute(Addr::unchecked(MINTER), cosmos_msg).unwrap();        
 
-
         let res = get_nft_info(&app, &cw721_contract, "0".to_string());
         assert_eq!(res.extension, new_metadata);
-        println!("{:?}", res);
-
-
     }
 
 }
