@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError, Uint128, Uint64};
+use cosmwasm_std::{StdError};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -63,8 +63,6 @@ pub enum ContractError {
     #[error("Unable to claim staking")]
     UnableToClaimStaking {},
 
-    
-    
     #[error("NFT amount mismatch nft: {nft}  staking: {staking}")]
     NFTStakingMismatch { staking: String, nft:String }
 }

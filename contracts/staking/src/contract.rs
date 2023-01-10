@@ -1,6 +1,6 @@
 use std::{vec};
 
-// #[cfg(not(feature = "library"))]
+ #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     coin, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
@@ -404,7 +404,7 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
     let state = State::new();
     for (val_address, unbonding) in vec_val_unbonding {
         let mut validator_info = state.validator.load(deps.storage, &val_address)?;
-         validator_info.unbonding = validator_info.unbonding.checked_sub(unbonding.u128()).unwrap();
+        validator_info.unbonding = validator_info.unbonding.checked_sub(unbonding.u128()).unwrap();
         state.validator.save(deps.storage,&val_address,&validator_info)?;
     }   
 
@@ -597,6 +597,7 @@ fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Res
 
     let treasury_addr = TREASURY.load(deps.storage)?;
 
+   // QUESTION: Setting the address to receive the rewards. Do this affect who does receive the unbonding tokens?
    let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
 
     let msgs = msgs?;
@@ -1008,7 +1009,7 @@ mod tests {
         );
     }
 
-
+    #[test]
     fn add_validators_bond_unbond() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1130,7 +1131,7 @@ mod tests {
         assert_eq!(res, Uint128::zero());
     }
 
-
+    #[test]
     fn add_validators_bond_unbond_claim() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1308,7 +1309,7 @@ mod tests {
         );
     }
 
-
+    #[test]
     fn remove_validators() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1447,7 +1448,7 @@ mod tests {
         assert_eq!(res, ContractError::OnlyOneValidator {  });
     }
 
-
+    #[test]
     fn bond_check() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1469,7 +1470,7 @@ mod tests {
         assert_eq!(res.attributes[1], ("total_bonded", "1100"));
     }
 
- 
+    #[test] 
     fn collect_rewards() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);
@@ -1490,7 +1491,7 @@ mod tests {
         assert_eq!(res.attributes[0], ("action", "withdraw_delegation_rewards"));
     }
 
-
+    #[test]
     fn _send_balance_treasury() {
         let mut deps = mock_dependencies();
         let info = mock_info(MANAGER1, &[]);

@@ -41,8 +41,11 @@ serde             = { workspace = true }
 thiserror         = { workspace = true }
 cosmwasm-schema   = { workspace = true }
 cw-utils          = { workspace = true }
-nft = {path = "../nft"}
-staking ={path="../staking"}
+nft = {version = "0.1.0", path = "../nft"}
+staking ={version = "0.1.0",path="../staking"}
+
+
+
 
 
 [dev-dependencies]

@@ -1,7 +1,6 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{ Uint128, Uint64, Addr};
-use cw_storage_plus::{Item, MultiIndex, Index, IndexList, IndexedMap, Map};
-use cw_utils::Duration;
+use cosmwasm_std::{ Uint128,  Addr};
+use cw_storage_plus::{Item,};
 use nft::contract::Metadata;
 
 #[cw_serde]

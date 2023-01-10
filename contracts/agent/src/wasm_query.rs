@@ -1,24 +1,7 @@
 
-use cosmwasm_std::{
-   coin, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
-   MessageInfo, QuerierWrapper, Response, StakingMsg, StdResult, Uint128, Uint64,
-   Order, Coin, DistributionMsg, CosmosMsg, SubMsg, entry_point, WasmMsg, Reply,
-   SubMsgResult
-};
+use cosmwasm_std::{to_binary, Addr, Deps, StdResult, Uint128, WasmMsg, };
 use cw721_base::MintMsg;
-use cw_utils::Duration;
-use nft::contract::{Metadata, Status};
-use staking::msg::{ExecuteMsg, QueryMsg};
-
-
-// pub enum Status {
-//     Bonded, Unbonding
-// }
-
-// pub struct Metadata {
-//     pub native: Option<Vec<Coin>>,
-//     pub status: Status,
-// }
+use nft::contract::{Metadata };
 
 
 pub fn get_cw721_mint_msg(
@@ -39,7 +22,6 @@ pub fn get_cw721_mint_msg(
  }
  
 //  UpdateMetadata { token_id: String, token_uri: String, metadata: Metadata },
-
  pub fn get_cw721_update_metadata_msg(
     token_id: String,
     token_uri: Option<String>,
@@ -54,8 +36,8 @@ pub fn get_cw721_mint_msg(
     };
     Ok(update_wasm_msg)
  }
-//     Burn { token_id: String },
 
+//     Burn { token_id: String },
 pub fn get_cw721_burn_msg(
     token_id: String,
     nft_contract_address: &Addr
@@ -133,53 +115,6 @@ pub fn get_staking_bonded (deps: Deps, nft_id: String, staking_contract_addr: &S
        .query_wasm_smart(staking_contract_addr, &staking::msg::QueryMsg::BondedByNFT { nft_id : nft_id })?;
    Ok(resp)
 }
-
-// pub struct NftInfoResponse<T> {
-//    /// Universal resource identifier for this NFT
-//    /// Should point to a JSON file that conforms to the ERC721
-//    /// Metadata JSON Schema
-//    pub token_uri: Option<String>,
-//    /// You can add any custom metadata here when you extend cw721-base
-//    pub extension: T,
-// }
-
-// #[returns(cw721::NftInfoResponse<Metadata>)]               
-// NftInfo {
-//     token_id: String,
-// },
-
-
-// pub fn get_add_validator_msg(
-//    address: String,
-//    bond_denom: String,
-//    unbonding_period: Duration,
-//    staking_contract_address: &Addr,
-// ) -> StdResult<CosmosMsg> {
-//    // TODO: when we know how to query the chain we will remove the unbonding period parameter
-//    let add_validator_msg = staking::msg::ExecuteMsg::AddValidator { address:address.into(), bond_denom, unbonding_period }; 
-//    let add_validator_exec = WasmMsg::Execute {
-//        contract_addr: staking_contract_address.into(),
-//        msg: to_binary(&add_validator_msg)?,
-//        funds: vec![],
-//    };
-//    let add_validator_cosmos_msg: CosmosMsg = add_validator_exec.into();
-//    Ok(add_validator_cosmos_msg)
-// }
-
-// pub fn get_remove_validator_msg(
-//    address: String,
-//    staking_contract_address: &Addr,
-// ) -> StdResult<CosmosMsg> {
-   
-//    let remove_validator_msg = staking::msg::ExecuteMsg::RemoveValidator { address: address.into() };
-//    let remove_validator_exec = WasmMsg::Execute {
-//        contract_addr: staking_contract_address.into(),
-//        msg: to_binary(&remove_validator_msg)?,
-//        funds: vec![],
-//    };
-//    let remove_validator_cosmos_msg: CosmosMsg = remove_validator_exec.into();
-//    Ok(remove_validator_cosmos_msg)
-// }
 
 
 

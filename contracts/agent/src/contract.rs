@@ -1,13 +1,10 @@
 use std::str::FromStr;
 use std::{vec};
 
-// #[cfg(not(feature = "library"))]
-use cosmwasm_std::{
-     to_binary, Addr, Binary, Deps, DepsMut, Env,
-    MessageInfo, Response, StdResult, Uint128,
-     SubMsg, entry_point, WasmMsg, Reply,
-    SubMsgResult, Empty,
-};
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
+use cosmwasm_std::{to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128, SubMsg, WasmMsg, Reply,
+    SubMsgResult, Empty,};
 
 use cw2::set_contract_version;
 use cw_utils::{one_coin, PaymentError, parse_reply_instantiate_data,};
@@ -18,6 +15,7 @@ use crate::msg::{ExecuteMsg, InstantiateMsg,  QueryMsg};
 use crate::state::{STAKING, NFT, NFT_ID, CACHE_NFT, CacheNFT};
 use crate::wasm_query::{get_cw721_update_metadata_msg, get_cw721_mint_msg, get_cw721_burn_msg, get_nft_owner, get_nft_metadata , get_staking_bonded };
 use nft::contract::{Metadata, Status};
+
 
 // version info for migration info
 const CONTRACT_NAME: &str = "crates.io:cw-agent-angel";
@@ -44,7 +42,6 @@ pub fn instantiate(
     deps.api.addr_validate(&msg.admin)?;
     deps.api.addr_validate(&msg.manager)?;
     deps.api.addr_validate(&msg.treasury)?;
-
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     NFT_ID.save(deps.storage, &Uint128::zero())?;
@@ -105,21 +102,6 @@ pub fn execute(
     }
 }
 
-// pub fn get_cw721_mint_msg(
-//     owner: &Addr,
-//     token_id: String,
-//     token_uri: Option<String>,
-//     extension: Metadata,
-//     nft_contract_address: &Addr
-
-// pub enum Status {
-//     Bonded, Unbonding
-// }
-
-// pub struct Metadata {
-//     pub native: Vec<Coin>,
-//     pub status: Status,
-// }
 pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option<String>) -> Result<Response, ContractError>{
     let d_coin = match one_coin(&info) {
         Ok(coin) => coin,
@@ -136,6 +118,7 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
     let staking_contract_addr= STAKING.load(deps.storage)?;
     let reply_key : u64;
     let nft_id_info: String;
+
     let wasm_msg = match nft_id {
         Some(nft_id) => {
             // Query the nft contract and the staking contract, get the current amount staked. See that they match.
@@ -155,7 +138,6 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
             if extension.native[0].denom != d_coin.denom{
                 return Err(ContractError::OnlyOneNativeCoinPerNFT {  } )                 
             } 
-
             // This is reduntant but increases security of bugs in initial contract version. 
             // nft and staking contract must be aligned on the amount stored on the nft. 
             let extension_amount = extension.native[0].amount;
@@ -171,7 +153,7 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
             nft_id_info = format!("Rebond nft_id {}", nft_id.clone());
 
             // Storing info to be used on the reply entry point
-            let extension = Metadata { native: vec![d_coin], status: Status::Bonded };
+            let extension = Metadata { native: extension.native, status: Status::Bonded };
             let cache_nft = CacheNFT { sender: info.sender, nft_id, extension };
             CACHE_NFT.save(deps.storage, &cache_nft )?;
 
@@ -190,12 +172,10 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
             NFT_ID.update(deps.storage, |nft_id| -> Result<_, ContractError> {
                 Ok(nft_id + Uint128::from(1u128))
             })?;
-
             // Storing info to be used on the reply entry point
             let extension = Metadata { native: vec![d_coin], status: Status::Bonded };
             let cache_nft = CacheNFT { sender: info.sender, nft_id: current_nft_id.to_string(), extension };
             CACHE_NFT.save(deps.storage, &cache_nft )?;
-
             reply_key = EXECUTE_NEW_BOND_STAKING_REPLY_ID;
             let bond_msg = staking::msg::ExecuteMsg::Bond { nft_id: current_nft_id };
             WasmMsg::Execute {
@@ -205,9 +185,7 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
             }
         }
     };
-
-    let submsg:SubMsg<Empty> = SubMsg::reply_always(wasm_msg, reply_key);
-
+    let submsg:SubMsg<Empty> = SubMsg::reply_on_success(wasm_msg, reply_key);
     Ok(Response::new()
         .add_attribute("action", "execute_bond")
         .add_attribute("nft_id_info", nft_id_info)
@@ -216,7 +194,6 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
 }
 
 pub fn execute_unbond(deps: DepsMut, _env: Env, info: MessageInfo, nft_id: String)-> Result<Response, ContractError>{
-
     let nft_contract_addr = NFT.load(deps.storage)?;
     let owner = get_nft_owner(deps.as_ref(), nft_id.clone(), &nft_contract_addr)?;
     if owner != info.sender {
@@ -240,7 +217,7 @@ pub fn execute_unbond(deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Strin
         msg: to_binary(&unbond_msg)?,
         funds: vec![],
     };
-    let submsg:SubMsg<Empty> = SubMsg::reply_always(unbond_wasm_msg, EXECUTE_UNBOND_STAKING_REPLY_ID);
+    let submsg:SubMsg<Empty> = SubMsg::reply_on_success(unbond_wasm_msg, EXECUTE_UNBOND_STAKING_REPLY_ID);
 
     Ok(Response::new()
         .add_attribute("action", "execute_unbond")
@@ -269,7 +246,7 @@ pub fn execute_claim(deps: DepsMut, _env: Env, info: MessageInfo, nft_id:String)
     let cache_nft = CacheNFT { sender: info.sender, nft_id: nft_id.clone(), extension };
     CACHE_NFT.save(deps.storage, &cache_nft )?;
 
-    let submsg:SubMsg<Empty> = SubMsg::reply_always(claim_wasm_msg, EXECUTE_CLAIM_STAKING_REPLY_ID);
+    let submsg:SubMsg<Empty> = SubMsg::reply_on_success(claim_wasm_msg, EXECUTE_CLAIM_STAKING_REPLY_ID);
 
     Ok(Response::new()
     .add_attribute("action", "execute_claim")
@@ -279,10 +256,12 @@ pub fn execute_claim(deps: DepsMut, _env: Env, info: MessageInfo, nft_id:String)
 
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+   
     match msg {
-        QueryMsg::GetNFTAdress {  } => unimplemented!(),
-        QueryMsg::GetStakingAdress {  } => unimplemented!(),
+        QueryMsg::GetNFTAdress {  } => to_binary(&NFT.load(deps.storage)?),
+        QueryMsg::GetStakingAdress {  } => to_binary(&STAKING.load(deps.storage)?),
+
     }
 }
 
@@ -316,6 +295,8 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
             )?;
             submsg= SubMsg::reply_always(wasm_msg, reply_key);
             vec_submsg.push(submsg);
+
+            // Cleaning Cache
             let blank_cache = CacheNFT{ sender: Addr::unchecked("blank"), nft_id: String::from("blank"), extension: Metadata { native: vec![], status: Status::Bonded }};
             CACHE_NFT.save(deps.storage,&blank_cache)?;
         },
@@ -329,7 +310,11 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
                 &Addr::unchecked(NFT.load(deps.storage)?)
             )?;
             submsg= SubMsg::reply_always(wasm_msg, reply_key);  
-            vec_submsg.push(submsg);           
+            vec_submsg.push(submsg);
+            
+            // Cleaning Cache
+            let blank_cache = CacheNFT{ sender: Addr::unchecked("blank"), nft_id: String::from("blank"), extension: Metadata { native: vec![], status: Status::Bonded }};
+            CACHE_NFT.save(deps.storage,&blank_cache)?;
         },
         (EXECUTE_UNBOND_STAKING_REPLY_ID, SubMsgResult::Ok(_))=>{
             let cache_nft = CACHE_NFT.load(deps.storage)?;
@@ -341,29 +326,37 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
                 &Addr::unchecked(NFT.load(deps.storage)?)
             )?;
             submsg= SubMsg::reply_always(wasm_msg, reply_key);  
-            vec_submsg.push(submsg);           
+            vec_submsg.push(submsg);
+            
+            // Cleaning Cache
+            let blank_cache = CacheNFT{ sender: Addr::unchecked("blank"), nft_id: String::from("blank"), extension: Metadata { native: vec![], status: Status::Bonded }};
+            CACHE_NFT.save(deps.storage,&blank_cache)?;
         },
         (EXECUTE_CLAIM_STAKING_REPLY_ID, SubMsgResult::Ok(_))=>{
             let cache_nft = CACHE_NFT.load(deps.storage)?;
             reply_key = EXECUTE_CLAIM_NFT_REPLY_ID;
             wasm_msg = get_cw721_burn_msg(cache_nft.nft_id, &Addr::unchecked(NFT.load(deps.storage)?))?;
             submsg= SubMsg::reply_always(wasm_msg, reply_key);  
-            vec_submsg.push(submsg);           
+            vec_submsg.push(submsg);
+            
+            // Cleaning Cache
+            let blank_cache = CacheNFT{ sender: Addr::unchecked("blank"), nft_id: String::from("blank"), extension: Metadata { native: vec![], status: Status::Bonded }};
+            CACHE_NFT.save(deps.storage,&blank_cache)?;
         },
         (EXECUTE_NEW_BOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
         (EXECUTE_RE_BOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
         (EXECUTE_UNBOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
         (EXECUTE_CLAIM_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
-        (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Err(_))=> {return Err(ContractError::NFTContractNotInstantiated {  });},
-        (INSTANTIATE_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::StakingContractNotInstantiated {  })},
-        (EXECUTE_NEW_BOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{ return Err(ContractError::UnableMintNFT {  } ) },
-        (EXECUTE_RE_BOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{  return Err(ContractError::UnableUpdateNFTMetadata {  }) },
-        (EXECUTE_UNBOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToUnbondNFT {  })}, 
-        (EXECUTE_CLAIM_NFT_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToBurnNFT {  }) },       
-        (EXECUTE_NEW_BOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToStakeBondNewNFT {  })},
-        (EXECUTE_RE_BOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToStakeReBondNFT {  })},
-        (EXECUTE_UNBOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToUnbondStaking {  }) },
-        (EXECUTE_CLAIM_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToClaimStaking {  }) },
+        // (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Err(_))=> {return Err(ContractError::NFTContractNotInstantiated {  });},
+        // (INSTANTIATE_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::StakingContractNotInstantiated {  })},
+        // (EXECUTE_NEW_BOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{ return Err(ContractError::UnableMintNFT {  } ) },
+        // (EXECUTE_RE_BOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{  return Err(ContractError::UnableUpdateNFTMetadata {  }) },
+        // (EXECUTE_UNBOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToUnbondNFT {  })}, 
+        // (EXECUTE_CLAIM_NFT_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToBurnNFT {  }) },       
+        // (EXECUTE_NEW_BOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToStakeBondNewNFT {  })},
+        // (EXECUTE_RE_BOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToStakeReBondNFT {  })},
+        // (EXECUTE_UNBOND_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToUnbondStaking {  }) },
+ //       (EXECUTE_CLAIM_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::UnableToClaimStaking {  }) },
         (_ , _) => { return Err(ContractError::UnknownReplyIdSubMsgResult { id: reply.id.to_string() });   },
       }
 
@@ -380,13 +373,5 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
 
 #[cfg(test)]
 mod tests {
-    
-
-    use cosmwasm_std::testing::{
-        mock_dependencies, mock_env, mock_info, MockQuerier, MOCK_CONTRACT_ADDR,
-    };
-    use cosmwasm_std::{
-        coins, Coin, CosmosMsg, Decimal, FullDelegation, Validator, from_binary, Delegation, StdError, attr
-    };
  
 }

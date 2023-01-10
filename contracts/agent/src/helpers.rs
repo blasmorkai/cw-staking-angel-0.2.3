@@ -1,24 +1,12 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, CustomQuery, Querier, QuerierWrapper, StdResult, WasmMsg, WasmQuery, Coin
-};
-
-//use crate::msg::{ExecuteMsg, };
+use cosmwasm_std::{ to_binary, Addr, CosmosMsg,  StdResult, WasmMsg,  Coin};
 
 pub use cw721::{OwnerOfResponse, TokensResponse, NftInfoResponse};
-// pub use cw721_base::QueryMsg;
-// use cw721_base::ExecuteMsg;
-
 pub use crate::msg::QueryMsg;
 pub use crate::msg::ExecuteMsg;
 
-
-// use crate::msg::ExecuteMsg;
-
-/// CwTemplateContract is a wrapper around Addr that provides a lot of helpers
-/// for working with this.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AgentContract(pub Addr);
 
@@ -36,6 +24,5 @@ impl AgentContract {
         }
         .into())
     }
-
- 
 }
+

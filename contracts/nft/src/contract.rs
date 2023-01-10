@@ -1,7 +1,9 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Empty, Coin};
+#[cfg(not(feature = "library"))]
+use cosmwasm_std::entry_point;
+use cosmwasm_std::{Empty, Coin, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
 use cw2::set_contract_version;
 pub use cw721_base::{Cw721Contract, ContractError, InstantiateMsg, MintMsg, MinterResponse};
 
@@ -39,8 +41,6 @@ pub mod entry {
     use crate::msg::{ExecuteMsg, QueryMsg};
 
     use super::*;
-
-    use cosmwasm_std::{Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, entry_point};
 
     #[cfg_attr(not(feature = "library"), entry_point)]
     pub fn instantiate(

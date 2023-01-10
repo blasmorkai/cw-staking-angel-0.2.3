@@ -19,8 +19,9 @@ const config = {
 // NOT IMPLEMENTED YET // THIS CODE IS JUST FOR GUIDING PURPUSES //// NOT IMPLEMENTED YET // THIS CODE IS JUST FOR GUIDING PURPUSES // 
 // NOT IMPLEMENTED YET // THIS CODE IS JUST FOR GUIDING PURPUSES //// NOT IMPLEMENTED YET // THIS CODE IS JUST FOR GUIDING PURPUSES // 
 
-const wasmswap_wasm = fs.readFileSync("../artifacts/wasmswap.wasm");
-const cw20_base_wasm = fs.readFileSync("../scripts/cw20_base.wasm");
+const agent_wasm = fs.readFileSync("../artifacts/wasmswap.wasm");
+const nft_wasm = fs.readFileSync("../scripts/cw20_base.wasm");
+const staking_wasm = fs.readFileSync("../scripts/cw20_base.wasm");
 
 const mnemonic =
     "test peanut elevator motor proud globe obtain gasp sad balance nature ladder";
