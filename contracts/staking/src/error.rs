@@ -84,6 +84,9 @@ pub enum ContractError {
     #[error("Only one validator registered. Its delegations can not be redelegated")]
     OnlyOneValidator { },
 
+    #[error("Validator set is empty. Can not bond")]
+    ValidatorSetEmpty { },
+
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },
 }

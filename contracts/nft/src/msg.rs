@@ -20,7 +20,6 @@ use crate::contract::Metadata;
 // }
 
 
-
 #[cw_serde]
 pub enum ExecuteMsg {
     /// Mint a new NFT, can only be called by the contract minter
@@ -33,7 +32,7 @@ pub enum ExecuteMsg {
     TransferNft { recipient: String, token_id: String },
     /// Send is a base message to transfer a token to a contract and trigger an action
     /// on the receiving contract.
-    SendNft {contract: String,token_id: String,msg: Binary,},    
+    SendNft {contract: String,token_id: String,msg: Binary,},   
 }
 
 #[cw_serde]
@@ -116,14 +115,14 @@ impl From<ExecuteMsg> for Cw721ExecuteMsg<Metadata,Empty>
             ExecuteMsg::Burn { token_id } => Cw721ExecuteMsg::Burn { token_id },
             ExecuteMsg::TransferNft {recipient, token_id,} => Cw721ExecuteMsg::TransferNft {recipient, token_id,},
             ExecuteMsg::SendNft {contract, token_id, msg,} => Cw721ExecuteMsg::SendNft {contract,token_id, msg,},
-            _ => unreachable!("Invalid ExecuteMsg"),
+             _ => unreachable!("Invalid ExecuteMsg"),
         }
     }
 }
 
-impl From<QueryMsg> for Cw721QueryMsg<Empty>                         //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+impl From<QueryMsg> for Cw721QueryMsg<Empty>                         
 {                       
-    fn from(msg: QueryMsg) -> Cw721QueryMsg<Empty> {                 //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    fn from(msg: QueryMsg) -> Cw721QueryMsg<Empty> {                 
         match msg {
             QueryMsg::OwnerOf {
                 token_id,

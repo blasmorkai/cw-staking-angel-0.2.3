@@ -172,6 +172,21 @@ mod tests {
         Ok(delegation)
     }
 
+    fn get_total_bonded(app: &App, staking_contract: &StakingContract) -> StdResult<Uint128> {
+        let delegation = app.wrap()
+            .query_wasm_smart(staking_contract.addr(), &QueryMsg::TotalBonded {  })
+            .unwrap();
+        Ok(delegation)
+    }
+
+    fn get_total_claimed(app: &App, staking_contract: &StakingContract) -> StdResult<Uint128> {
+        let delegation = app.wrap()
+            .query_wasm_smart(staking_contract.addr(), &QueryMsg::TotalClaimed {  })
+            .unwrap();
+        Ok(delegation)
+    }
+
+
     pub fn query_module_delegation(
         app: &App,
         delegator: &str,
@@ -253,14 +268,21 @@ mod tests {
         assert_eq!(balance.amount, Uint128::zero());
 
        // Undelegating 600 will split the amount between the two validator with the most tokens staked.
-       // Unbonding 300 from VALIDATOR1 (600 - 300 = 300) AND 300 from VALIDATOR2 (400 - 300 = 100) 
+       // UNBONDING 300 from VALIDATOR1 (600 - 300 = 300) AND 300 from VALIDATOR2 (400 - 300 = 100) 
        let msg = ExecuteMsg::Unbond { nft_id: Uint128::from(NFT_ID1), amount: Uint128::from(600u128) };
         app.execute_contract(Addr::unchecked(AGENT1), staking_contract.addr(), &msg, &[]).unwrap();
  
-        // QUESTION: THIS SHOULD GIVE A BALANCE OF THE UNBONDED TOKENS RECEIVED BY THE CONTRACT AFTER THE UNBONDING PERIOD
-        // app.update_block(|block| block.time = block.time.plus_seconds( 3 ));
-        // let balance = get_balance(&app, staking_contract.addr().to_string(), NATIVE_DENOM.to_string());
-        // assert_ne!(balance.amount, Uint128::zero());
+        // Unbonding period has been set to one second.
+        app.update_block(|block| block.time = block.time.plus_seconds( 3 ));
+
+        //cw-multi-test provide a StakingSudo::ProcessQueue {} msg, where it process the queue, 1 entry per msg, so to do 2 delegations at the same time, send this msg twice
+        app.sudo(cw_multi_test::SudoMsg::Staking(cw_multi_test::StakingSudo::ProcessQueue {})).unwrap();
+        app.sudo(cw_multi_test::SudoMsg::Staking(cw_multi_test::StakingSudo::ProcessQueue {})).unwrap();        
+        let balance = get_balance(&app, staking_contract.addr().to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount, Uint128::from(600u128));
+
+        let msg = ExecuteMsg::BondCheck {  };
+        app.execute_contract(Addr::unchecked(MANAGER1), staking_contract.addr(), &msg, &[]).unwrap();
 
         // After Unbonding, the tokens delegated have changed
         let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR1).unwrap();
@@ -277,25 +299,21 @@ mod tests {
         let balance = get_balance(&app, AGENT1.to_string(), NATIVE_DENOM.to_string());
         assert_eq!(balance.amount,Uint128::from(3800u128) );
 
-        let validator1_info = get_validator_info(&app, &staking_contract, VALIDATOR1.into());
-        assert_eq!(validator1_info.bonded, 300u128);        
-        let validator1_info = get_validator_info(&app, &staking_contract, VALIDATOR2.into());
-        assert_eq!(validator1_info.bonded, 100u128);
-        let validator1_info = get_validator_info(&app, &staking_contract, VALIDATOR3.into());
-        assert_eq!(validator1_info.bonded, 200u128);
-
         // Unbonding period = 1 week. Just at this point CLAIMS will mature and allow the user to claim
         app.update_block(|block| block.time = block.time.plus_seconds(60 * 60 * 24 * 7 ));
 
-        // Unfortunately, it seems that integration tests to not mock the sending of funds from the validator to the delegator
-        //after the unbonding period. Hence, we can not test ExecuteMsg::Claim
-        // let msg = ExecuteMsg::Claim { nft_id: Uint128::from(NFT_ID1), sender: AGENT1.to_string(), amount: Uint128::from(600u128) };
-        // app.execute_contract(Addr::unchecked(AGENT1), staking_contract.addr(), &msg, &[]).unwrap();
-        // let balance = get_balance(&app, AGENT1.to_string(), NATIVE_DENOM.to_string());
-        // println!(">>>>>>>>>>>>>> AGENT1 balance after claiming: {:?}", balance);
-
+        // CLAIMING. Balance on the agent changes from 3800 to 4400
+        let balance = get_balance(&app, staking_contract.addr().to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount, Uint128::from(600u128));
+        let balance = get_balance(&app, AGENT1.to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount,Uint128::from(3800u128) );
+        let msg = ExecuteMsg::Claim { nft_id: Uint128::from(NFT_ID1), sender: AGENT1.to_string(), amount: Uint128::from(600u128) };
+        app.execute_contract(Addr::unchecked(AGENT1), staking_contract.addr(), &msg, &[]).unwrap();
         let balance = get_balance(&app, staking_contract.addr().to_string(), NATIVE_DENOM.to_string());
         assert_eq!(balance.amount, Uint128::zero());
+        let balance = get_balance(&app, AGENT1.to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount,Uint128::from(4400u128) );
+
         let rewards = query_rewards(&app, staking_contract.addr().as_str(), VALIDATOR1);
         assert_eq!(rewards,Some(Uint128::from(60u128)));
         let rewards = query_rewards(&app, staking_contract.addr().as_str(), VALIDATOR2);
@@ -309,6 +327,14 @@ mod tests {
         // app.execute_contract(Addr::unchecked(MANAGER1), staking_contract.addr(), &msg, &[]).unwrap();
         // let balance = get_balance(&app, staking_contract.addr().to_string(), NATIVE_DENOM.to_string());
         // assert_eq!(balance.amount, Uint128::from(120u128));
+
+        let msg = ExecuteMsg::BondCheck {  };
+        app.execute_contract(Addr::unchecked(MANAGER1), staking_contract.addr(), &msg, &[]).unwrap();
+
+        let total_bonded = get_total_bonded(&app, &staking_contract).unwrap();
+        assert_eq!(total_bonded,Uint128::from(1200u128));
+        let total_claimed = get_total_claimed(&app, &staking_contract);
+        assert_eq!(total_claimed,Ok(Uint128::from(600u128)));
     }
 
 }

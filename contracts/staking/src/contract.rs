@@ -70,6 +70,7 @@ pub fn execute_bond(deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Uint128
     if info.sender != agent {
         return Err(ContractError::Unauthorized {});
     }
+   
     // Making sure there is only one coin and handling the possible errors.
     let d_coins = match one_coin(&info) {
         Ok(coin) => coin,
@@ -88,12 +89,14 @@ pub fn execute_bond(deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Uint128
     }
     let amount = d_coins.amount;
 
+    let state = State::new();
+    if state.validator.is_empty(deps.storage) {
+        return Err(ContractError::ValidatorSetEmpty {  });    
+    }
 
     let validator_address = chosen_validator(deps.as_ref(), None)?;
 
-
     //Update bonded tokens to validator
-    let state = State::new();
     let mut validator_info = state.validator.load(deps.storage, &validator_address)?;
     validator_info.bonded = validator_info.bonded.checked_add(amount.u128()).unwrap();  
     state.validator.save(deps.storage, &validator_address, &validator_info)?;

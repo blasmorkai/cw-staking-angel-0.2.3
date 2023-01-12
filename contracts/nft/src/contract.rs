@@ -20,7 +20,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, )]
 pub enum Status {
-    Bonded, Unbonding
+    Bonded, Unbonding, Burnt
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, )]

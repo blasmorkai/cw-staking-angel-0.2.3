@@ -33,8 +33,14 @@ pub enum ContractError {
     #[error("Not the owner of the NFT")]
     NotOwnerNFT {},
 
-    #[error("Can not rebond and unbonding NFT")]
-    UnbondingNFT {},
+    #[error("Only a Bonded NFT can be rebonded")]
+    OnlyBondedNFTCanBeRebonded {},
+
+    #[error("Only a Bonded NFT can be unbonded")]
+    OnlyBondedNFTCanBeUnbonded {},
+
+    #[error("Only an Unbonding NFT can be claimed")]
+    OnlyUnbondingNFTCanBeClaimed {},
 
     #[error("NFT only supports one native coin")]
     OnlyOneNativeCoinPerNFT {},

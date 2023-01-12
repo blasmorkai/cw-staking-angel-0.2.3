@@ -9,15 +9,11 @@ mod tests {
     use cosmwasm_std::testing::{ mock_env};
     use cw_utils::WEEK;
 
-
     const NATIVE_DENOM: &str = "ujunox";
-   const MANAGER1: &str = "juno148v3g2dpjeq6hwnlagmvq8pnqe5r9wjcrvel8u";
-    // const MANAGER1: &str = "manager";
+    const MANAGER1: &str = "juno148v3g2dpjeq6hwnlagmvq8pnqe5r9wjcrvel8u";
     const AGENT1: &str = "juno15urq2dtp9qce4fyc85m6upwm9xul30492fasy3";
-   const TREASURY1: &str = "juno196ax4vc0lwpxndu9dyhvca7jhxp70rmcl99tyh";
-    // const TREASURY1: &str = "treasur";
+    const TREASURY1: &str = "juno196ax4vc0lwpxndu9dyhvca7jhxp70rmcl99tyh";
 
-    // const VALIDATOR1: &str = "AD4AA82AD0116B34848F152EF2CD86C5B061CE74";
     const VALIDATOR1: &str = "validator1";
     const VALIDATOR2: &str = "validator2";
     const VALIDATOR3: &str = "validator3";
@@ -239,6 +235,10 @@ mod tests {
         }
     }
 
+    fn get_balance(app: &App, user: String, denom: String) -> Coin {
+        app.wrap().query_balance(user, denom).unwrap()
+    }
+
     #[test]
     fn instantiate_agent_contract() {
         let (mut app, code_id_agent, code_id_staking, code_id_nft) = store_code();
@@ -318,10 +318,16 @@ mod tests {
         let msg = ExecuteMsg::Unbond { nft_id: "1".to_string() };
         let err = app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[coin(1000, NATIVE_DENOM.to_string())]).unwrap_err();
         assert_eq!(err.downcast::<ContractError>().unwrap(), ContractError::NotOwnerNFT {  });
-        
+
+        // Contract and user balance BEFORE USER 2 unbonds NFT_ID 1
+        let balance = get_balance(&app, staking_contract_addr.to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount, Uint128::zero());
+        let balance = get_balance(&app, USER2.to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount,Uint128::from(3600u128) );
+
         //USER 2 Unbonds NFT_ID 1, which was bonded with 400 tokens
         let msg = ExecuteMsg::Unbond { nft_id: "1".to_string() };
-        app.execute_contract(Addr::unchecked(USER2), agent_contract.addr(), &msg, &[coin(400, NATIVE_DENOM.to_string())]).unwrap();  
+        app.execute_contract(Addr::unchecked(USER2), agent_contract.addr(), &msg, &[]).unwrap();  
         let all_nft_info = get_nft_all_info(&app, nft_contract_addr.clone(), "1".to_string());
         assert_eq!(all_nft_info.access.owner, String::from(USER2));
         assert_eq!(all_nft_info.info.extension.native, vec![coin(400u128, NATIVE_DENOM)]);
@@ -329,16 +335,40 @@ mod tests {
         // staking contract will choose the two validator's with most amount of bonded tokens and will unbound half of the 400 from each.
         // VALIDATOR2: 600 - 200 = 400. VALIDATOR3: 1200 - 200 =1000. 
         query_delegation_on_three_validators(&app, &staking_contract_addr, Uint128::from(400u128), Uint128::from(400u128), Uint128::from(1000u128));      
-  
-        // USER 1 can not claim a NFT owned by USER2
+ 
+        // Unbonding period has been set to one second.
+        app.update_block(|block| block.time = block.time.plus_seconds( 60*60*24*31 ));
+        //cw-multi-test provide a StakingSudo::ProcessQueue {} msg, where it process the queue, 1 entry per msg, so to do 2 delegations at the same time, send this msg twice
+        app.sudo(cw_multi_test::SudoMsg::Staking(cw_multi_test::StakingSudo::ProcessQueue {})).unwrap();
+        app.sudo(cw_multi_test::SudoMsg::Staking(cw_multi_test::StakingSudo::ProcessQueue {})).unwrap();  
+        app.sudo(cw_multi_test::SudoMsg::Staking(cw_multi_test::StakingSudo::ProcessQueue {})).unwrap();  
+
+        // Contract and user balance AFTER unbonding time
+        let balance = get_balance(&app, staking_contract_addr.to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount, Uint128::from(400u128));
+        let balance = get_balance(&app, USER2.to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount,Uint128::from(3600u128) );
+
+        // USER 1 can not claim an NFT owned by USER2
         let msg = ExecuteMsg::Claim { nft_id: "1".to_string() };
-        let err = app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[coin(400, NATIVE_DENOM.to_string())]).unwrap_err();  
+        let err = app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[]).unwrap_err();  
         assert_eq!(err.downcast::<ContractError>().unwrap(), ContractError::NotOwnerNFT {  });
 
-        // USER 2 can claim his NFT
-        // Getting error because There is nothing to claim yet as on Integration tests we still do not get unbonding tokens sent to the delegator by the validator.
-        let msg = ExecuteMsg::Claim { nft_id: "1".to_string() };
-        app.execute_contract(Addr::unchecked(USER2), agent_contract.addr(), &msg, &[]).unwrap_err();  
+        // USER 2 CAN claim his NFT - 400 tokens
+         let msg = ExecuteMsg::Claim { nft_id: "1".to_string() };
+        app.execute_contract(Addr::unchecked(USER2), agent_contract.addr(), &msg, &[]).unwrap();  
+
+        // Contract and user balance AFTER claiming 
+        let balance = get_balance(&app, staking_contract_addr.to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount, Uint128::zero());
+        let balance = get_balance(&app, USER2.to_string(), NATIVE_DENOM.to_string());
+        assert_eq!(balance.amount,Uint128::from(4000u128) );
+
+        // NFT minted and burnt
+        let all_nft_info = get_nft_all_info(&app, nft_contract_addr.clone(), "1".to_string());
+        assert_eq!(all_nft_info.access.owner, String::from(USER2));
+        assert_eq!(all_nft_info.info.extension.native, vec![coin(400u128, NATIVE_DENOM)]);
+        assert_eq!(all_nft_info.info.extension.status, Status::Burnt);
     }
 
 }

@@ -21,6 +21,8 @@ pub fn get_cw721_mint_msg(
     Ok(mint_wasm_msg)
  }
  
+
+
 //  UpdateMetadata { token_id: String, token_uri: String, metadata: Metadata },
  pub fn get_cw721_update_metadata_msg(
     token_id: String,
