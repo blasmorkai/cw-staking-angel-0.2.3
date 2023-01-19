@@ -7,7 +7,7 @@ use cosmwasm_std::{
 
 use crate::msg::{ExecuteMsg, };
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct StakingContract(pub Addr);
 
 impl StakingContract {
@@ -20,7 +20,7 @@ impl StakingContract {
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
             msg,
-            funds: funds,
+            funds,
         }
         .into())
     }

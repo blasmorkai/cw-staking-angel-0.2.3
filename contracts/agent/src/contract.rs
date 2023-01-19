@@ -82,7 +82,7 @@ pub fn instantiate(
    let reply_msg_staking = SubMsg::reply_on_success(instantiate_staking_msg, INSTANTIATE_STAKING_REPLY_ID);
    
    Ok(Response::new()
-        .add_attribute("action", "instantiate")
+        .add_attribute("action", "instantiate_agent")
         .add_submessage(reply_msg_nft)
         .add_submessage(reply_msg_staking)
     )   
@@ -257,7 +257,6 @@ pub fn execute_claim(deps: DepsMut, _env: Env, info: MessageInfo, nft_id:String)
     CACHE_NFT.save(deps.storage, &cache_nft )?;
 
     let submsg:SubMsg<Empty> = SubMsg::reply_on_success(claim_wasm_msg, EXECUTE_CLAIM_STAKING_REPLY_ID);
-    println!(">>>>>>>>>>>>> STEP 1: ");
     Ok(Response::new()
     .add_attribute("action", "execute_claim")
     .add_attribute("nft_id", nft_id)
@@ -281,17 +280,20 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
     let reply_key: u64;
     let submsg:SubMsg<Empty> ;
     let mut vec_submsg : Vec<SubMsg<Empty>> = vec![];
+    let mut response_value : String = "no_action".to_string();
 
     match (reply.clone().id, reply.clone().result) {
         (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Ok(_))=> {
             let res = parse_reply_instantiate_data(reply.clone()).unwrap();  
             let addr = deps.api.addr_validate(res.contract_address.clone().as_str())?;
             NFT.save(deps.storage, &addr.to_string())?;
+            response_value = format!("nft_contract_instantiated address: {}",addr);
         },
         (INSTANTIATE_STAKING_REPLY_ID, SubMsgResult::Ok(_))=>{
             let res = parse_reply_instantiate_data(reply.clone()).unwrap();  
             let addr = deps.api.addr_validate(res.contract_address.clone().as_str())?;
             STAKING.save(deps.storage, &addr.to_string())?;
+            response_value = format!("staking_contract_instantiated address: {}",addr);
         },
         (EXECUTE_NEW_BOND_STAKING_REPLY_ID, SubMsgResult::Ok(_))=>{
             let cache_nft = CACHE_NFT.load(deps.storage)?;
@@ -307,6 +309,8 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
             submsg= SubMsg::reply_on_success(wasm_msg, reply_key);
             vec_submsg.push(submsg);
 
+            response_value = format!("new_bond nft_id: {}",cache_nft.nft_id.clone());
+
             // Cleaning Cache
             let blank_cache = CacheNFT{ sender: Addr::unchecked("blank"), nft_id: String::from("blank"), extension: Metadata { native: vec![], status: Status::Bonded }};
             CACHE_NFT.save(deps.storage,&blank_cache)?;
@@ -315,13 +319,15 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
             let cache_nft = CACHE_NFT.load(deps.storage)?;
             reply_key = EXECUTE_RE_BOND_NFT_REPLY_ID;
             wasm_msg = get_cw721_update_metadata_msg(
-                cache_nft.nft_id, 
+                cache_nft.nft_id.clone(), 
                 None, 
                 cache_nft.extension, 
                 &Addr::unchecked(NFT.load(deps.storage)?)
             )?;
             submsg= SubMsg::reply_on_success(wasm_msg, reply_key);  
             vec_submsg.push(submsg);
+
+            response_value = format!("re_bond nft_id: {}",cache_nft.nft_id);
             
             // Cleaning Cache
             let blank_cache = CacheNFT{ sender: Addr::unchecked("blank"), nft_id: String::from("blank"), extension: Metadata { native: vec![], status: Status::Bonded }};
@@ -331,30 +337,33 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
             let cache_nft = CACHE_NFT.load(deps.storage)?;
             reply_key = EXECUTE_UNBOND_NFT_REPLY_ID;
             wasm_msg = get_cw721_update_metadata_msg(
-                cache_nft.nft_id, 
+                cache_nft.nft_id.clone(), 
                 None, 
                 cache_nft.extension, 
                 &Addr::unchecked(NFT.load(deps.storage)?)
             )?;
             submsg= SubMsg::reply_on_success(wasm_msg, reply_key);  
             vec_submsg.push(submsg);
+
+            response_value = format!("unbond nft_id: {}",cache_nft.nft_id);
             
             // Cleaning Cache
             let blank_cache = CacheNFT{ sender: Addr::unchecked("blank"), nft_id: String::from("blank"), extension: Metadata { native: vec![], status: Status::Bonded }};
             CACHE_NFT.save(deps.storage,&blank_cache)?;
         },
         (EXECUTE_CLAIM_STAKING_REPLY_ID, SubMsgResult::Ok(_))=>{
-            println!(">>>>>>>>>>>>> CLAIM STEP 2: ");
             let cache_nft = CACHE_NFT.load(deps.storage)?;  // NFT info cached has Status::Burnt
             reply_key = EXECUTE_CLAIM_NFT_REPLY_ID;
             wasm_msg = get_cw721_update_metadata_msg(
-                cache_nft.nft_id, 
+                cache_nft.nft_id.clone(), 
                 None, 
                 cache_nft.extension, 
                 &Addr::unchecked(NFT.load(deps.storage)?)
             )?;
             submsg= SubMsg::reply_on_success(wasm_msg, reply_key);  
             vec_submsg.push(submsg);
+
+            response_value = format!("claim nft_id: {}",cache_nft.nft_id);
             
             // Cleaning Cache
             let blank_cache = CacheNFT{ sender: Addr::unchecked("blank"), nft_id: String::from("blank"), extension: Metadata { native: vec![], status: Status::Bonded }};
@@ -373,7 +382,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
         (EXECUTE_NEW_BOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
         (EXECUTE_RE_BOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
         (EXECUTE_UNBOND_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{},
-        (EXECUTE_CLAIM_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{            println!(">>>>>>>>>>>>>>>>>>>>>>>>>> STEP 4 OK: ");   }, 
+        (EXECUTE_CLAIM_NFT_REPLY_ID, SubMsgResult::Ok(_))=>{}, 
         // (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Err(_))=> {return Err(ContractError::NFTContractNotInstantiated {  });},
         // (INSTANTIATE_STAKING_REPLY_ID, SubMsgResult::Err(_))=>{return Err(ContractError::StakingContractNotInstantiated {  })},
         // (EXECUTE_NEW_BOND_NFT_REPLY_ID, SubMsgResult::Err(_))=>{ return Err(ContractError::UnableMintNFT {  } ) },
@@ -390,6 +399,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
       Ok(Response::new()
       .add_attribute("action", "reply_handled")
       .add_attribute("reply_id", reply.id.to_string())
+      .add_attribute("reply_info", response_value)
       .add_submessages(vec_submsg)
   )
 

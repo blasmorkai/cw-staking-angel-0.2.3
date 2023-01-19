@@ -11,7 +11,7 @@ use crate::contract::Metadata;
 pub use crate::msg::QueryMsg;
 pub use crate::msg::ExecuteMsg;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct NftContract(pub Addr);
 
 impl NftContract {
@@ -37,7 +37,7 @@ impl NftContract {
         T: Into<String>,
         CQ: CustomQuery,
     {
-        let msg: QueryMsg = QueryMsg::OwnerOf { token_id:token_id, include_expired:None };
+        let msg: QueryMsg = QueryMsg::OwnerOf { token_id, include_expired:None };
         let query = WasmQuery::Smart { contract_addr: self.addr().into(), msg: to_binary(&msg)? }.into();
         let res: OwnerOfResponse = QuerierWrapper::<CQ>::new(querier).query(&query)?;
         Ok(res)
@@ -63,7 +63,7 @@ impl NftContract {
         T: Into<String>,
         CQ: CustomQuery,
     {
-        let msg: QueryMsg = QueryMsg::NftInfo { token_id: token_id };
+        let msg: QueryMsg = QueryMsg::NftInfo { token_id };
         let query = WasmQuery::Smart { contract_addr: self.addr().into(), msg: to_binary(&msg)? }.into();
         let res: NftInfoResponse<_> = QuerierWrapper::<CQ>::new(querier).query(&query)?;
         Ok(res)

@@ -145,12 +145,12 @@ mod tests {
         val2: String,
         val3: String,
     ) {
-        let msg = ExecuteMsg::AddValidator { address: val1.into(), bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
+        let msg = ExecuteMsg::AddValidator { address: val1, bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
         app.execute_contract(sender.clone(), staking_contract.addr(), &msg, &[]).unwrap();
-        let msg = ExecuteMsg::AddValidator { address: val2.into(), bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
+        let msg = ExecuteMsg::AddValidator { address: val2, bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
         app.execute_contract(sender.clone(), staking_contract.addr(), &msg, &[]).unwrap();
-        let msg = ExecuteMsg::AddValidator { address: val3.into(), bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
-        app.execute_contract(sender.clone(), staking_contract.addr(), &msg, &[]).unwrap();
+        let msg = ExecuteMsg::AddValidator { address: val3, bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
+        app.execute_contract(sender, staking_contract.addr(), &msg, &[]).unwrap();
     }
 
     fn get_validator_info(app: &App, staking_contract: &StakingContract, val_address:String) -> ValidatorInfo {
@@ -256,11 +256,11 @@ mod tests {
         assert_eq!(total_rewards,Uint128::from(60u128));
 
         // VALIDATOR1 has got 600 tokens staked
-       let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR1).unwrap();
+       let full_delegation = query_module_delegation(&app, staking_contract.addr().as_str(), VALIDATOR1).unwrap();
        assert_eq!(full_delegation.amount.amount,Uint128::from(600u128));
-       let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR2).unwrap();
+       let full_delegation = query_module_delegation(&app, staking_contract.addr().as_str(), VALIDATOR2).unwrap();
        assert_eq!(full_delegation.amount.amount,Uint128::from(400u128));
-       let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR3).unwrap();
+       let full_delegation = query_module_delegation(&app, staking_contract.addr().as_str(), VALIDATOR3).unwrap();
        assert_eq!(full_delegation.amount.amount,Uint128::from(200u128));
  
        // No upbonding or rewards have been received by contract
@@ -285,11 +285,11 @@ mod tests {
         app.execute_contract(Addr::unchecked(MANAGER1), staking_contract.addr(), &msg, &[]).unwrap();
 
         // After Unbonding, the tokens delegated have changed
-        let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR1).unwrap();
+        let full_delegation = query_module_delegation(&app, staking_contract.addr().as_str(), VALIDATOR1).unwrap();
         assert_eq!(full_delegation.amount.amount,Uint128::from(300u128));
-        let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR2).unwrap();
+        let full_delegation = query_module_delegation(&app, staking_contract.addr().as_str(), VALIDATOR2).unwrap();
         assert_eq!(full_delegation.amount.amount,Uint128::from(100u128));
-        let full_delegation = query_module_delegation(&app, &staking_contract.addr().as_str(), VALIDATOR3).unwrap();
+        let full_delegation = query_module_delegation(&app, staking_contract.addr().as_str(), VALIDATOR3).unwrap();
         assert_eq!(full_delegation.amount.amount,Uint128::from(200u128));
         // Same as previous, but data queried from the contract itself (as opposed to querying the network as before)
         let bonded_validator = get_bonded_on_validator(&app, &staking_contract, VALIDATOR1).unwrap();

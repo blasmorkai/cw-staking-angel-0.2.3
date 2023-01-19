@@ -77,10 +77,16 @@ impl<'a> State<'a>
             validator: IndexedMap::new(
                 "validatorinfo",
             ValidatorIndexes { 
-                bonded: MultiIndex::new(|_pk,d| d.bonded.clone(),"validatorinfo","validatorinfo__bonded"),
-                unbonding: MultiIndex::new(|_pk,d| d.unbonding.clone(),"validatorinfo","validatorinfo__claimed"),
+                bonded: MultiIndex::new(|_pk,d| d.bonded,"validatorinfo","validatorinfo__bonded"),
+                unbonding: MultiIndex::new(|_pk,d| d.unbonding,"validatorinfo","validatorinfo__claimed"),
                 },
             )
         }
     }
+}
+
+impl<'a> Default for State<'a> {
+	fn default() -> Self {
+		Self::new()
+	}
 }

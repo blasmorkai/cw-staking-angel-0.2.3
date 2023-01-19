@@ -30,6 +30,9 @@ pub enum ContractError {
     #[error("There is nothing to claim yet")]
     NothingToClaim {},
 
+    #[error("NFT has nothing to claim.")]
+    NFTNothingToClaim {},
+
     #[error("Cannot set to own account")]
     CannotSetOwnAccount {},
 

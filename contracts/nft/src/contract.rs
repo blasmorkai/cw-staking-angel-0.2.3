@@ -18,12 +18,12 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 //     pub amount: Uint128,
 // }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, )]
+#[derive(Serialize, Deserialize, Clone, PartialEq,Eq, JsonSchema, Debug, )]
 pub enum Status {
     Bonded, Unbonding, Burnt
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, )]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug, )]
 pub struct Metadata {
     pub native: Vec<Coin>,
     pub status: Status,
@@ -150,7 +150,7 @@ mod tests {
         };
 
         let exec_msg = crate::msg::ExecuteMsg::Mint(mint_msg.clone());
-        entry::execute(deps.as_mut(), mock_env(), info.clone(), exec_msg.into()).unwrap();
+        entry::execute(deps.as_mut(), mock_env(), info, exec_msg).unwrap();
 
         let query_msg = crate::msg::QueryMsg::NftInfo { token_id: token_id.to_string() };
         let res : NftInfoResponse<Metadata> = from_binary(&entry::query(deps.as_ref(), mock_env(), query_msg).unwrap()).unwrap();
@@ -184,8 +184,8 @@ mod tests {
             },
         };
 
-        let exec_msg = crate::msg::ExecuteMsg::Mint(mint_msg.clone());
-        entry::execute(deps.as_mut(), mock_env(), info.clone(), exec_msg.into()).unwrap();
+        let exec_msg = crate::msg::ExecuteMsg::Mint(mint_msg);
+        entry::execute(deps.as_mut(), mock_env(), info.clone(), exec_msg).unwrap();
 
 
         let _old_metadata = Metadata {
@@ -204,7 +204,7 @@ mod tests {
             extension: new_metadata.clone() 
         };
 
-        entry::execute(deps.as_mut(), mock_env(), info, exec_msg.into()).unwrap();
+        entry::execute(deps.as_mut(), mock_env(), info, exec_msg).unwrap();
 
         let query_msg = crate::msg::QueryMsg::NftInfo { token_id: token_id.to_string() };
         let res : NftInfoResponse<Metadata> = from_binary(&entry::query(deps.as_ref(), mock_env(), query_msg).unwrap()).unwrap();

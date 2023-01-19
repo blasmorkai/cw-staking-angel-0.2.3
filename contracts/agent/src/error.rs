@@ -27,7 +27,7 @@ pub enum ContractError {
     #[error("Multiple denoms sent")]
     MultipleDenoms {},
 
-    #[error("Invalid Coin")]
+    #[error("Invalid Coin BBB")]
     InvalidCoin {},
 
     #[error("Not the owner of the NFT")]

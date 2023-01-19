@@ -10,6 +10,7 @@ mod tests {
     use cw_utils::WEEK;
 
     const NATIVE_DENOM: &str = "ujunox";
+    const WRONG_DENOM: &str = "wrongdenom";
     const MANAGER1: &str = "juno148v3g2dpjeq6hwnlagmvq8pnqe5r9wjcrvel8u";
     const AGENT1: &str = "juno15urq2dtp9qce4fyc85m6upwm9xul30492fasy3";
     const TREASURY1: &str = "juno196ax4vc0lwpxndu9dyhvca7jhxp70rmcl99tyh";
@@ -75,6 +76,9 @@ mod tests {
                     vec![Coin {
                         denom: NATIVE_DENOM.to_string(),
                         amount: Uint128::new(4000),
+                    }, Coin {
+                        denom: WRONG_DENOM.to_string(),
+                        amount: Uint128::new(5000),
                     }],
                 )
                 .unwrap();
@@ -240,7 +244,7 @@ mod tests {
     }
 
     #[test]
-    fn instantiate_agent_contract() {
+    fn agent_bond_rebond_unbond_claim_contract_3validators() {
         let (mut app, code_id_agent, code_id_staking, code_id_nft) = store_code();
         let agent_contract = agent_angel_instantiate(
             &mut app, 
@@ -336,7 +340,7 @@ mod tests {
         // VALIDATOR2: 600 - 200 = 400. VALIDATOR3: 1200 - 200 =1000. 
         query_delegation_on_three_validators(&app, &staking_contract_addr, Uint128::from(400u128), Uint128::from(400u128), Uint128::from(1000u128));      
  
-        // Unbonding period has been set to one second.
+        // Unbonding period on the validator config has been set to one second, but the validator info on the staking contract has been registered to be one week. Therefore, we need 7 days at least
         app.update_block(|block| block.time = block.time.plus_seconds( 60*60*24*31 ));
         //cw-multi-test provide a StakingSudo::ProcessQueue {} msg, where it process the queue, 1 entry per msg, so to do 2 delegations at the same time, send this msg twice
         app.sudo(cw_multi_test::SudoMsg::Staking(cw_multi_test::StakingSudo::ProcessQueue {})).unwrap();
@@ -371,4 +375,115 @@ mod tests {
         assert_eq!(all_nft_info.info.extension.status, Status::Burnt);
     }
 
+    #[test]
+    fn agent_bond_rebond_claim_hack_1validator() {
+        let (mut app, code_id_agent, code_id_staking, code_id_nft) = store_code();
+        let agent_contract = agent_angel_instantiate(
+            &mut app, 
+            code_id_agent, 
+            code_id_nft, 
+            code_id_staking, 
+            MANAGER1.to_string(), 
+            TREASURY1.to_string(),
+        );
+        let staking_contract_addr = get_staking_contract_address(&app, &agent_contract);
+        assert_eq!(staking_contract_addr, "contract2".to_string());
+        let nft_contract_addr = get_nft_contract_address(&app, &agent_contract);
+        assert_eq!(nft_contract_addr, "contract1".to_string());
+
+        let msg = staking::msg::ExecuteMsg::AddValidator { address: VALIDATOR1.into(), bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
+        app.execute_contract(Addr::unchecked(MANAGER1), Addr::unchecked(&staking_contract_addr.clone()), &msg, &[]).unwrap();
+
+ 
+        //USER 1 BONDS NFT_ID 0  with 600 tokens
+        let msg = ExecuteMsg::Bond { nft_id: None };
+        app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[coin(600, NATIVE_DENOM.to_string())]).unwrap();
+
+        // NFT minted, bonded, right amount and right owner
+        let all_nft_info = get_nft_all_info(&app, nft_contract_addr.clone(), "0".to_string());
+        assert_eq!(all_nft_info.access.owner, String::from(USER1));
+        assert_eq!(all_nft_info.info.extension.native, vec![coin(600u128, NATIVE_DENOM)]);
+        assert_eq!(all_nft_info.info.extension.status, Status::Bonded);
+
+        // Query validator for staked tokens
+        let full_delegation = app.wrap().query_delegation(&staking_contract_addr, VALIDATOR1).unwrap().unwrap();
+        assert_eq!(full_delegation.amount.amount,Uint128::from(600u128)); 
+
+       //USER 1 tries to BONDS NFT_ID 1  with no tokens
+       let msg = ExecuteMsg::Bond { nft_id: None };
+       let err = app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[]).unwrap_err();
+       assert_eq!(err.downcast::<ContractError>().unwrap(), ContractError::NoFunds {  });
+
+        //USER 1 tries to BONDS NFT_ID 1  with wrong denom
+        let msg = ExecuteMsg::Bond { nft_id: None };
+        let err = app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[coin(600, WRONG_DENOM.to_string())]).unwrap_err();
+        assert_eq!(err.downcast::<staking::error::ContractError>().unwrap(), staking::error::ContractError::InvalidCoin {});
+
+        //USER 1 tries to BONDS NFT_ID 1  with more than one coin
+        let msg = ExecuteMsg::Bond { nft_id: None };
+        let err = app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[coin(600, NATIVE_DENOM.to_string()), coin(600, WRONG_DENOM.to_string())]).unwrap_err();
+        assert_eq!(err.downcast::<ContractError>().unwrap(), ContractError::MultipleDenoms {});
+
+        //USER 1 BONDS NFT_ID 1  with 400 tokens
+        let msg = ExecuteMsg::Bond { nft_id: None };
+        app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[coin(400, NATIVE_DENOM.to_string())]).unwrap();
+
+        // NFT minted, bonded, right amount and right owner
+        let all_nft_info = get_nft_all_info(&app, nft_contract_addr.clone(), "1".to_string());
+        assert_eq!(all_nft_info.access.owner, String::from(USER1));
+        assert_eq!(all_nft_info.info.extension.native, vec![coin(400u128, NATIVE_DENOM)]);
+        assert_eq!(all_nft_info.info.extension.status, Status::Bonded);
+
+        // Query validator for staked tokens
+        let full_delegation = app.wrap().query_delegation(&staking_contract_addr, VALIDATOR1).unwrap().unwrap();
+        assert_eq!(full_delegation.amount.amount,Uint128::from(1000u128)); 
+
+        // USER 1 tries to unbond his nft 0 without unbonding first
+        let msg = ExecuteMsg::Claim { nft_id: "0".to_string() };
+        let err = app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[]).unwrap_err(); 
+        assert_eq!(err.downcast::<ContractError>().unwrap(), ContractError::OnlyUnbondingNFTCanBeClaimed {});
+
+        // USER 2 tries to unbond User1's nft 0
+        let msg = ExecuteMsg::Unbond { nft_id: "0".to_string() };
+        let err = app.execute_contract(Addr::unchecked(USER2), agent_contract.addr(), &msg, &[]).unwrap_err(); 
+        assert_eq!(err.downcast::<ContractError>().unwrap(), ContractError::NotOwnerNFT {});
+
+        // USER 1 unbonds nft 0
+        let msg = ExecuteMsg::Unbond { nft_id: "0".to_string() };
+        app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[]).unwrap(); 
+  
+        let all_nft_info = get_nft_all_info(&app, nft_contract_addr.clone(), "0".to_string());
+        assert_eq!(all_nft_info.access.owner, String::from(USER1));
+        assert_eq!(all_nft_info.info.extension.native, vec![coin(600u128, NATIVE_DENOM)]);
+        assert_eq!(all_nft_info.info.extension.status, Status::Unbonding);
+
+        // USER 1 tries to rebond nft 0 after having unbonded it.
+        let msg = ExecuteMsg::Bond { nft_id: Some("0".to_string()) };
+        let err = app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[coin(1000, NATIVE_DENOM.to_string())]).unwrap_err(); 
+        assert_eq!(err.downcast::<ContractError>().unwrap(), ContractError::OnlyBondedNFTCanBeRebonded {});
+
+        // Unbonding period on the validator config has been set to one second on the validator, but the validator info has been set to one week.
+        app.update_block(|block| block.time = block.time.plus_seconds( 60*60*24*7 ));
+        //cw-multi-test provide a StakingSudo::ProcessQueue {} msg, where it process the queue, 1 entry per msg, so to do 2 delegations at the same time, send this msg twice
+        app.sudo(cw_multi_test::SudoMsg::Staking(cw_multi_test::StakingSudo::ProcessQueue {})).unwrap();
+
+        // USER 1 claims his nft 0
+        let msg = ExecuteMsg::Claim { nft_id: "0".to_string() };
+        app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[]).unwrap(); 
+
+        let all_nft_info = get_nft_all_info(&app, nft_contract_addr.clone(), "0".to_string());
+        assert_eq!(all_nft_info.access.owner, String::from(USER1));
+        assert_eq!(all_nft_info.info.extension.native, vec![coin(600u128, NATIVE_DENOM)]);
+        assert_eq!(all_nft_info.info.extension.status, Status::Burnt);
+
+        // USER 1 tries to rebond nft 0 after having claimed/burnt it.
+        let msg = ExecuteMsg::Bond { nft_id: Some("0".to_string()) };
+        let err = app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[coin(1000, NATIVE_DENOM.to_string())]).unwrap_err(); 
+        assert_eq!(err.downcast::<ContractError>().unwrap(), ContractError::OnlyBondedNFTCanBeRebonded {});
+
+        // USER 1 tries to rebond nft 0 after having claimed/burnt it.
+        let msg = ExecuteMsg::Unbond { nft_id: "0".to_string() };
+        let err = app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[coin(1000, NATIVE_DENOM.to_string())]).unwrap_err(); 
+        assert_eq!(err.downcast::<ContractError>().unwrap(), ContractError::OnlyBondedNFTCanBeUnbonded {});
+    }
 }

@@ -43,7 +43,7 @@ pub fn instantiate(
     NUMBER_VALIDATORS.save(deps.storage, &Uint64::zero())?;
 
     Ok(Response::new()
-        .add_attribute("action", "instantiate")
+        .add_attribute("action", "instantiate_staking")
     )   
 }
 
@@ -132,36 +132,24 @@ pub fn execute_bond(deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Uint128
 pub fn chosen_validator (deps: Deps, excluded_address: Option<String>) -> Result<String, ContractError>  {
     let state = State::new();
     // let validator_result : StdResult<Vec<_>>;
-    let validator_result: (String, ValidatorInfo) ;
-    if excluded_address.is_none() {
-        // validator_result = state.validator.idx.bonded
-        // .range(deps.storage,None,None,Order::Ascending)
-        // .take(1)
-        // .collect();
-         validator_result = state.validator.idx.bonded
+    if let Some(address_exclude) = excluded_address {
+        let validator_result = state.validator.idx.bonded
         .range(deps.storage,None,None,Order::Descending)
-        .last()
-        .unwrap()
-        .unwrap();       
-    } else {
-        let excluded_address = excluded_address.unwrap();
-        // validator_result = state.validator.idx.bonded
-        // .range(deps.storage,None,None,Order::Ascending)
-        // .filter(|item| item.as_ref().unwrap().0 != excluded_address)
-        // .take(1)
-        // .collect();
-        validator_result = state.validator.idx.bonded
-        .range(deps.storage,None,None,Order::Descending)
-        .filter(|item| item.as_ref().unwrap().0 != excluded_address)
+        .filter(|item| item.as_ref().unwrap().0 != address_exclude)
         .last()
         .unwrap()
         .unwrap();
+        let validator_address = &validator_result.0; 
+        Ok(validator_address.into())
+    } else {
+        let validator_result = state.validator.idx.bonded
+        .range(deps.storage,None,None,Order::Descending)
+        .last()
+        .unwrap()
+        .unwrap();  
+        let validator_address = &validator_result.0;
+        Ok(validator_address.into())
     }
-
-        //let vec_validator_address = validator_result?;
-        // let validator_address = &vec_validator_address[0].0;    
-        let validator_address = &validator_result.0;    
-    Ok(validator_address.into())
 }
 
 
@@ -174,11 +162,11 @@ pub fn execute_unbond(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint12
     // Must unbond the total amount held in this contract
     let key = nft_id.to_string();
     if !NFT_BONDED.has(deps.storage, &key) {
-        return Err(ContractError::NFTNotRegistered { nft_id: key.to_string() })
+        return Err(ContractError::NFTNotRegistered { nft_id: key })
     }
     let nft_amount_bonded = NFT_BONDED.load(deps.storage, &key)?;
     if nft_amount_bonded != amount {
-        return Err(ContractError::RequestUnbondAmountMismatch { nft_id: key.to_string(), requested: amount.to_string(), balance: nft_amount_bonded.to_string() });
+        return Err(ContractError::RequestUnbondAmountMismatch { nft_id: key, requested: amount.to_string(), balance: nft_amount_bonded.to_string() });
     }
     NFT_BONDED.remove(deps.storage, &key);
 
@@ -198,14 +186,14 @@ pub fn execute_unbond(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint12
     .collect();
 
     let state = State::new();
-    for i in 0..vec_address_coin.len() {
+    for vec_value in &vec_address_coin {
         // Remove from the validator info the required amount
-        let val_address =&vec_address_coin[i].0;
-        let val_amount = vec_address_coin[i].1.amount;
+        let val_address =&vec_value.0;
+        let val_amount = vec_value.1.amount;
         let mut validator_info = state.validator.load(deps.storage, val_address)?;
         validator_info.bonded = validator_info.bonded.checked_sub(val_amount.u128()).unwrap();
         validator_info.unbonding = validator_info.unbonding.checked_add(val_amount.u128()).unwrap();
-        state.validator.save(deps.storage,&val_address,&validator_info)?;
+        state.validator.save(deps.storage,val_address,&validator_info)?;
 
         if NFT_VAL_UNBONDING.has(deps.storage, (&key,val_address)) {
             return Err(ContractError::NFTAlreadyUnbonding { nft_id: key, val_addr: val_address.to_string() })
@@ -285,7 +273,7 @@ pub fn chosen_validators_unstake (deps: Deps, amount:Uint128, denom:String, numb
 
         let vec_all_validators = all_validators?;
 
-        let mut remaining_amount = amount.clone();
+        let mut remaining_amount = amount;
         let total_number_validators = vec_all_validators.len();
         let total_number_validators_u64 = total_number_validators as u64;
         let mut i = 0;
@@ -295,7 +283,7 @@ pub fn chosen_validators_unstake (deps: Deps, amount:Uint128, denom:String, numb
 
             if i > total_number_validators - 1 {
                 return Err(ContractError::UnableUnstakeAmount {
-                    amount: amount, number_validators: Uint64::from(total_number_validators_u64)
+                    amount, number_validators: Uint64::from(total_number_validators_u64)
                 });
             }
     
@@ -311,7 +299,7 @@ pub fn chosen_validators_unstake (deps: Deps, amount:Uint128, denom:String, numb
             
             if remaining_amount > vec_all_validators[i].1.amount {
                 vec_planb_validator.push((address.to_string(),coin(*validator_amount, denom)));
-                remaining_amount = remaining_amount - vec_all_validators[i].1.amount;
+                remaining_amount -=vec_all_validators[i].1.amount;
                 i +=1;
             } else {
                 vec_planb_validator.push((address.to_string(),coin(remaining_amount.u128(), denom)));
@@ -333,7 +321,7 @@ pub fn chosen_validators_unstake (deps: Deps, amount:Uint128, denom:String, numb
     // Confirm the vector takes into account exactly the amount required
     if sum != amount.u128() {
         return Err(ContractError::UnableUnstakeAmount {
-            amount: amount, number_validators: Uint64::from(number_validators)
+            amount, number_validators: Uint64::from(number_validators)
         });
     }
 
@@ -375,7 +363,7 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
 
     // Must make sure that the tokens to be claimed by that nft_id have matured. 
     // This will avoid possible issue with validators with different unbonding periods, with claims maturing time differently
-    if to_send != Uint128::from(amount) {
+    if to_send != amount {
         return Err(ContractError::RequestUnbondAmountMismatch { nft_id: nft_id.to_string(), requested: amount.to_string(), balance: to_send.to_string() });
     }
 
@@ -396,7 +384,6 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
         Ok(total.checked_add(to_send)?)
     })?;
     
-
     // NFT_VAL_UNBONDING information let the contract update the unbonding validator info. 
     let res : StdResult<Vec<_>> = NFT_VAL_UNBONDING
     .prefix(nft_id.to_string().as_str())
@@ -404,11 +391,16 @@ pub fn execute_claim(deps: DepsMut, env: Env, info: MessageInfo, nft_id: Uint128
     .collect();
     let vec_val_unbonding = res?;
 
+    if vec_val_unbonding.is_empty() {
+        return Err(ContractError::NFTNothingToClaim {});
+    }
+
     let state = State::new();
     for (val_address, unbonding) in vec_val_unbonding {
         let mut validator_info = state.validator.load(deps.storage, &val_address)?;
         validator_info.unbonding = validator_info.unbonding.checked_sub(unbonding.u128()).unwrap();
         state.validator.save(deps.storage,&val_address,&validator_info)?;
+        NFT_VAL_UNBONDING.remove(deps.storage, (&nft_id.to_string(), &val_address));
     }   
 
     // transfer tokens to the sender
@@ -503,39 +495,79 @@ pub fn execute_remove_validator(deps: DepsMut, env: Env, info: MessageInfo, src_
         return Err(ContractError::OnlyOneValidator {})
     } 
 
-    let res:Response;   
-    if option_full_delegation.is_some() && state_amount != Uint128::zero(){
+    if state_amount == Uint128::zero() {
+        state.validator.remove(deps.storage, &src_validator_address)?;
+        let res = Response::new()
+        .add_attribute("action", "remove_validator")
+        .add_attribute("address",src_validator_address);
+        Ok(res)
+    } else if let Some(full_delegation) = option_full_delegation {
+
          // What if the chosen validator is the one we are trying to remove??
-        let dst_validator_address = chosen_validator(deps.as_ref(), Some(src_validator_address.clone()))?;
+         let dst_validator_address = chosen_validator(deps.as_ref(), Some(src_validator_address.clone()))?;
     
-        // Update state with redelegated bonded tokens to validator and validator that is removed
-        let mut validator_info = state.validator.load(deps.storage, &dst_validator_address)?;
-        validator_info.bonded = validator_info.bonded + state_amount.u128();      
-        state.validator.save(deps.storage, &dst_validator_address, &validator_info)?;
-        state.validator.remove(deps.storage, &src_validator_address)?;
-
-        let amount = option_full_delegation.unwrap().amount;
-        // When we redelegate, by default all the pending rewards are claimed.
-        let msg = StakingMsg::Redelegate { 
-            src_validator:src_validator_address.to_string(), 
-            dst_validator: dst_validator_address.clone(), 
-            amount: amount.clone() 
-        };
-
-        res = Response::new()
-        .add_message(msg)
-        .add_attribute("action", "remove_validator")
-        .add_attribute("address",src_validator_address)
-        .add_attribute("redelegated_validator", dst_validator_address)
-        .add_attribute("redelegated_denom", amount.denom)
-        .add_attribute("redelegated_amount", amount.amount);
+         // Update state with redelegated bonded tokens to validator and validator that is removed
+         let mut validator_info = state.validator.load(deps.storage, &dst_validator_address)?;
+         validator_info.bonded += state_amount.u128();      
+         state.validator.save(deps.storage, &dst_validator_address, &validator_info)?;
+         state.validator.remove(deps.storage, &src_validator_address)?;
+ 
+         let amount = full_delegation.amount;
+         //let amount = option_full_delegation.unwrap().amount;
+         // When we redelegate, by default all the pending rewards are claimed.
+         let msg = StakingMsg::Redelegate { 
+             src_validator:src_validator_address.to_string(), 
+             dst_validator: dst_validator_address.clone(), 
+             amount: amount.clone() 
+         };
+ 
+         let res = Response::new()
+         .add_message(msg)
+         .add_attribute("action", "remove_validator")
+         .add_attribute("address",src_validator_address)
+         .add_attribute("redelegated_validator", dst_validator_address)
+         .add_attribute("redelegated_denom", amount.denom)
+         .add_attribute("redelegated_amount", amount.amount);
+         Ok(res)
     } else {
-        state.validator.remove(deps.storage, &src_validator_address)?;
-        res = Response::new()
-        .add_attribute("action", "remove_validator")
-        .add_attribute("address",src_validator_address)
+         Err(ContractError::InvalidCoin {  })
     }
-     Ok(res)
+
+    // // Clippy: if let Some(full_delegation) = option_full_delegation {
+    // if option_full_delegation.is_some() && state_amount != Uint128::zero(){
+    //      // What if the chosen validator is the one we are trying to remove??
+    //     let dst_validator_address = chosen_validator(deps.as_ref(), Some(src_validator_address.clone()))?;
+    
+    //     // Update state with redelegated bonded tokens to validator and validator that is removed
+    //     let mut validator_info = state.validator.load(deps.storage, &dst_validator_address)?;
+    //     validator_info.bonded += state_amount.u128();      
+    //     state.validator.save(deps.storage, &dst_validator_address, &validator_info)?;
+    //     state.validator.remove(deps.storage, &src_validator_address)?;
+
+    //      //Clippy: let amount = full_delegation.amount;
+    //     let amount = option_full_delegation.unwrap().amount;
+    //     // When we redelegate, by default all the pending rewards are claimed.
+    //     let msg = StakingMsg::Redelegate { 
+    //         src_validator:src_validator_address.to_string(), 
+    //         dst_validator: dst_validator_address.clone(), 
+    //         amount: amount.clone() 
+    //     };
+
+    //     let res = Response::new()
+    //     .add_message(msg)
+    //     .add_attribute("action", "remove_validator")
+    //     .add_attribute("address",src_validator_address)
+    //     .add_attribute("redelegated_validator", dst_validator_address)
+    //     .add_attribute("redelegated_denom", amount.denom)
+    //     .add_attribute("redelegated_amount", amount.amount);
+    //     Ok(res)
+    // } else {
+    //     state.validator.remove(deps.storage, &src_validator_address)?;
+    //     let res = Response::new()
+    //     .add_attribute("action", "remove_validator")
+    //     .add_attribute("address",src_validator_address);
+    //     Ok(res)
+    // }
 }
 
 // Check if chain delegated tokens by this contract match the value registered in TOTAL_BONDED state
@@ -552,7 +584,7 @@ pub fn execute_bond_check (deps: Deps, env:Env, info: MessageInfo) -> Result<Res
     let state_total_bonded = BONDED.load(deps.storage)?;
     if total_bonded != state_total_bonded {
         return Err(ContractError::BondedDiffer {
-            total_bonded: total_bonded, state_total_bonded: state_total_bonded
+            total_bonded, state_total_bonded
         });       
     } 
     Ok(Response::new()
@@ -673,7 +705,7 @@ fn bonded_on_validator(querier: &QuerierWrapper, delegator: &Addr, validator: &A
     let _denom = full_delegation.amount.denom.as_str();
     let amount = full_delegation.amount.amount;
 
-    Ok(Uint128::from(amount))
+    Ok(amount)
 }
 
 // *****************************************************************************************************************************
@@ -787,7 +819,7 @@ mod tests {
 
         execute(deps.branch(), env.clone(), info.clone(), msg2).unwrap();
         execute(deps.branch(), env.clone(), info.clone(), msg1).unwrap();
-        let res = execute(deps.branch(), env.clone(), info.clone(), msg3).unwrap();
+        let res = execute(deps.branch(), env, info, msg3).unwrap();
         assert_eq!(res.attributes[0], ("action", "add_validator"));
     }
 
@@ -797,25 +829,25 @@ mod tests {
 
         if val1_amount > 0 {
             let balance = coins(val1_amount, "ustake");
-            let info = mock_info(&info.sender.to_string(), &balance);  
+            let info = mock_info(info.sender.as_ref(), &balance);  
             let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID1) };
-            let res = execute(deps.branch(), env.clone(), info.clone(), msg).unwrap();
+            let res = execute(deps.branch(), env.clone(), info, msg).unwrap();
             assert_eq!(res.attributes[0], ("action", "bond"));
         }
 
         if val2_amount > 0 {
             let balance = coins(val2_amount, "ustake");
-            let info = mock_info(&info.sender.to_string(), &balance);  
+            let info = mock_info(info.sender.as_ref(), &balance);  
             let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID2) };
-            let res = execute(deps.branch(), env.clone(), info.clone(), msg).unwrap();
+            let res = execute(deps.branch(), env.clone(), info, msg).unwrap();
             assert_eq!(res.attributes[0], ("action", "bond"));
         }
 
         if val3_amount > 0 {
             let balance = coins(val3_amount, "ustake");
-            let info = mock_info(&info.sender.to_string(), &balance);  
+            let info = mock_info(info.sender.as_ref(), &balance);  
             let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID3) };
-            let res = execute(deps.branch(), env.clone(), info.clone(), msg).unwrap();
+            let res = execute(deps.branch(), env, info, msg).unwrap();
             assert_eq!(res.attributes[0], ("action", "bond"));
         }
 
@@ -912,13 +944,13 @@ mod tests {
             treasury: TREASURY1.into(),
         };
 
-        instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let info = mock_info(&MANAGER1, &[]); 
-        register_3_validators(deps.as_mut(), env.clone(), info.clone());
+        let info = mock_info(MANAGER1, &[]); 
+        register_3_validators(deps.as_mut(), env.clone(), info);
         
         let msg = QueryMsg::ValidatorInfo { address: VALIDATOR1.to_string() };
-        let res = query(deps.as_ref(), env.clone(), msg).unwrap();
+        let res = query(deps.as_ref(), env, msg).unwrap();
         let res : ValidatorInfo = from_binary(&res).unwrap();
         assert_eq!(res, 
             ValidatorInfo{ 
@@ -944,28 +976,28 @@ mod tests {
             treasury: TREASURY1.into(),
         };
 
-        instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let info = mock_info(&MANAGER1, &[]); 
-        register_3_validators(deps.as_mut(), env.clone(), info.clone());
+        let info = mock_info(MANAGER1, &[]); 
+        register_3_validators(deps.as_mut(), env.clone(), info);
 
         let balance = [coin(10, "random"), coin(100, "ustake")];
         let info = mock_info(AGENT1, &balance);
         let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID1) };
-        let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
         assert_eq!(res, ContractError::MultipleDenoms {  }); 
 
         let balance = coins(100, "fakestake");
         let info = mock_info(AGENT1, &balance);  
         let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID1) };
-        let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
         assert_eq!(res, ContractError::InvalidCoin {  }); 
 
 
         let balance = coins(100, "ustake");
         let info = mock_info(AGENT1, &balance);  
         let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID1) };
-        let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "bond"));
         assert_eq!(1, res.messages.len());
         let delegate = &res.messages[0];
@@ -980,13 +1012,13 @@ mod tests {
         let balance = coins(200, "ustake");
         let info = mock_info(AGENT1, &balance); 
         let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID2) };
-        let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "bond"));        
 
         let balance = coins(300, "ustake");
         let info = mock_info(AGENT1, &balance); 
         let msg = ExecuteMsg::Bond { nft_id: Uint128::from(NFT_ID3) };
-        let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "bond"));                
 
         let msg = QueryMsg::TotalBonded {  };
@@ -1000,7 +1032,7 @@ mod tests {
         assert_eq!(res, Uint128::from(600u128));
 
         let msg = QueryMsg::ValidatorInfo { address: VALIDATOR1.to_string() };
-        let res = query(deps.as_ref(), env.clone(), msg).unwrap();
+        let res = query(deps.as_ref(), env, msg).unwrap();
         let res : ValidatorInfo = from_binary(&res).unwrap();
         assert_eq!(res, 
             ValidatorInfo{ 
@@ -1021,11 +1053,11 @@ mod tests {
             .update_staking("ustake", &[sample_validator(VALIDATOR1),sample_validator(VALIDATOR2),sample_validator(VALIDATOR3)], &[]);
 
         let msg = InstantiateMsg {agent: AGENT1.into(),manager: MANAGER1.into(),treasury: TREASURY1.into(),};
-        instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let info = mock_info(&MANAGER1, &[]); 
-        register_3_validators(deps.as_mut(), env.clone(), info.clone());
-        let info = mock_info(&AGENT1, &[]); 
+        let info = mock_info(MANAGER1, &[]); 
+        register_3_validators(deps.as_mut(), env.clone(), info);
+        let info = mock_info(AGENT1, &[]); 
         nft123_bond_on_validators(deps.as_mut(), env.clone(), info.clone(), 500,300, 200);
         check_bonding_on_validators(deps.as_ref(), 
             500, 
@@ -1107,7 +1139,7 @@ mod tests {
         assert_eq!(res, ContractError::RequestUnbondAmountMismatch { nft_id: "2".to_string(), requested: "600".to_string(), balance: "700".to_string() }); 
 
         let msg = ExecuteMsg::Unbond { nft_id: Uint128::from(NFT_ID2), amount: Uint128::from(700u128)  };
-        let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "unbond")); 
         check_bonding_on_validators(deps.as_ref(), 
         0, 
@@ -1129,7 +1161,7 @@ mod tests {
         assert_eq!(res, Uint128::from(1800u128));
 
         let msg = QueryMsg::Bonded {  };
-        let res = query(deps.as_ref(), env.clone(), msg).unwrap();
+        let res = query(deps.as_ref(), env, msg).unwrap();
         let res: Uint128 = from_binary(&res).unwrap();
         assert_eq!(res, Uint128::zero());
     }
@@ -1143,11 +1175,11 @@ mod tests {
             .update_staking("ustake", &[sample_validator(VALIDATOR1),sample_validator(VALIDATOR2),sample_validator(VALIDATOR3)], &[]);
 
         let msg = InstantiateMsg {agent: AGENT1.into(),manager: MANAGER1.into(),treasury: TREASURY1.into(),};
-        instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let info = mock_info(&MANAGER1, &[]); 
-        register_3_validators(deps.as_mut(), env.clone(), info.clone());
-        let info = mock_info(&AGENT1, &[]); 
+        let info = mock_info(MANAGER1, &[]); 
+        register_3_validators(deps.as_mut(), env.clone(), info);
+        let info = mock_info(AGENT1, &[]); 
         nft123_bond_on_validators(deps.as_mut(), env.clone(), info.clone(), 500,300, 200);
         check_bonding_on_validators(deps.as_ref(), 
             500, 
@@ -1196,7 +1228,7 @@ mod tests {
         let env_not_claim_ready = later(&env, DAY);
         deps.querier.update_balance(MOCK_CONTRACT_ADDR, coins(0, "ustake"));
         let msg = ExecuteMsg::Claim { nft_id: Uint128::from(NFT_ID3), sender: USER1.to_string(), amount: Uint128::from(200u128)};
-        let res = execute(deps.as_mut(), env_not_claim_ready.clone(), info.clone(), msg);
+        let res = execute(deps.as_mut(), env_not_claim_ready, info.clone(), msg);
         assert!(res.is_err(), "{:?}", res);
         assert_eq!(res.unwrap_err(), ContractError::NothingToClaim {  });
 
@@ -1209,7 +1241,7 @@ mod tests {
         let env_claim_ready = later(&env, (WEEK + HOUR).unwrap());
         deps.querier.update_balance(MOCK_CONTRACT_ADDR, coins(200, "ustake"));
         let msg = ExecuteMsg::Claim { nft_id: Uint128::from(NFT_ID3), sender: USER1.to_string(), amount: Uint128::from(200u128)};
-        let res = execute(deps.as_mut(), env_claim_ready.clone(), info.clone(), msg).unwrap();
+        let res = execute(deps.as_mut(), env_claim_ready, info.clone(), msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "claim"));
 
         check_bonding_on_validators(deps.as_ref(), 
@@ -1264,7 +1296,7 @@ mod tests {
         let env_claim_ready = later(&env, (WEEK + HOUR).unwrap());
         deps.querier.update_balance(MOCK_CONTRACT_ADDR, coins(300, "ustake"));
         let msg = ExecuteMsg::Claim { nft_id: Uint128::from(NFT_ID2), sender: USER1.to_string(), amount: Uint128::from(300u128)};
-        let res = execute(deps.as_mut(), env_claim_ready.clone(), info.clone(), msg).unwrap();
+        let res = execute(deps.as_mut(), env_claim_ready, info.clone(), msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "claim"));
 
         check_bonding_on_validators(deps.as_ref(), 
@@ -1299,7 +1331,7 @@ mod tests {
         let env_claim_ready = later(&env, (WEEK + HOUR).unwrap());
         deps.querier.update_balance(MOCK_CONTRACT_ADDR, coins(500, "ustake"));
         let msg = ExecuteMsg::Claim { nft_id: Uint128::from(NFT_ID1), sender: USER1.to_string(), amount: Uint128::from(500u128)};
-        let res = execute(deps.as_mut(), env_claim_ready.clone(), info.clone(), msg).unwrap();
+        let res = execute(deps.as_mut(), env_claim_ready, info, msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "claim"));
 
         check_bonding_on_validators(deps.as_ref(), 
@@ -1319,13 +1351,13 @@ mod tests {
         let env = mock_env();
 
         let msg = InstantiateMsg {agent: AGENT1.into(),manager: MANAGER1.into(),treasury: TREASURY1.into(),};
-        instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let info = mock_info(&MANAGER1, &[]); 
+        let info = mock_info(MANAGER1, &[]); 
         mocking_set_validators_delegations(&mut deps.querier, 600, 300, 200);
-        register_3_validators(deps.as_mut(), env.clone(), info.clone());
-        let info = mock_info(&AGENT1, &[]); 
-        nft123_bond_on_validators(deps.as_mut(), env.clone(), info.clone(), 600,300, 200);
+        register_3_validators(deps.as_mut(), env.clone(), info);
+        let info = mock_info(AGENT1, &[]); 
+        nft123_bond_on_validators(deps.as_mut(), env.clone(), info, 600,300, 200);
 
         check_bonding_on_validators(deps.as_ref(), 
         600, 
@@ -1337,7 +1369,7 @@ mod tests {
         );
 
         // Removing VALIDATOR3, with the least amount of tokens will make the contract choose the second validator with the least amount of tokens
-        let info = mock_info(&MANAGER1, &[]); 
+        let info = mock_info(MANAGER1, &[]); 
         let msg = ExecuteMsg::RemoveValidator { address: VALIDATOR3.to_string() };
         let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "remove_validator"));
@@ -1447,7 +1479,7 @@ mod tests {
 
         // Trying to remove VALIDATOR2 will not be possible
         let msg = ExecuteMsg::RemoveValidator { address: VALIDATOR2.to_string() };
-        let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap_err();
+        let res = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert_eq!(res, ContractError::OnlyOneValidator {  });
     }
 
@@ -1458,17 +1490,17 @@ mod tests {
         let env = mock_env();
 
         let msg = InstantiateMsg {agent: AGENT1.into(),manager: MANAGER1.into(),treasury: TREASURY1.into(),};
-        instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let info = mock_info(&MANAGER1, &[]); 
+        let info = mock_info(MANAGER1, &[]); 
         mocking_set_validators_delegations(&mut deps.querier, 600, 300, 200);
-        register_3_validators(deps.as_mut(), env.clone(), info.clone());
-        let info = mock_info(&AGENT1, &[]); 
-        nft123_bond_on_validators(deps.as_mut(), env.clone(), info.clone(), 600,300, 200);
+        register_3_validators(deps.as_mut(), env.clone(), info);
+        let info = mock_info(AGENT1, &[]); 
+        nft123_bond_on_validators(deps.as_mut(), env.clone(), info, 600,300, 200);
 
-        let info = mock_info(&MANAGER1, &[]); 
+        let info = mock_info(MANAGER1, &[]); 
         let msg = ExecuteMsg::BondCheck {  };
-        let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        let res = execute(deps.as_mut(), env, info, msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "bond_check"));
         assert_eq!(res.attributes[1], ("total_bonded", "1100"));
     }
@@ -1480,17 +1512,17 @@ mod tests {
         let env = mock_env();
 
         let msg = InstantiateMsg {agent: AGENT1.into(),manager: MANAGER1.into(),treasury: TREASURY1.into(),};
-        instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let info = mock_info(&MANAGER1, &[]); 
+        let info = mock_info(MANAGER1, &[]); 
         mocking_set_validators_delegations(&mut deps.querier, 600, 300, 200);
-        register_3_validators(deps.as_mut(), env.clone(), info.clone());
-        let info = mock_info(&AGENT1, &[]); 
-        nft123_bond_on_validators(deps.as_mut(), env.clone(), info.clone(), 600,300, 200);
+        register_3_validators(deps.as_mut(), env.clone(), info);
+        let info = mock_info(AGENT1, &[]); 
+        nft123_bond_on_validators(deps.as_mut(), env.clone(), info, 600,300, 200);
 
-        let info = mock_info(&MANAGER1, &[]); 
+        let info = mock_info(MANAGER1, &[]); 
         let msg = ExecuteMsg::CollectAngelRewards {  };
-        let res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        let res = execute(deps.as_mut(), env, info, msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "withdraw_delegation_rewards"));
     }
 
@@ -1501,18 +1533,18 @@ mod tests {
         let env = mock_env();
 
         let msg = InstantiateMsg {agent: AGENT1.into(),manager: MANAGER1.into(),treasury: TREASURY1.into(),};
-        instantiate(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
+        instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-        let info = mock_info(&MANAGER1, &[]); 
+        let info = mock_info(MANAGER1, &[]); 
         mocking_set_validators_delegations(&mut deps.querier, 600, 300, 200);
-        register_3_validators(deps.as_mut(), env.clone(), info.clone());
-        let info = mock_info(&AGENT1, &[]); 
-        nft123_bond_on_validators(deps.as_mut(), env.clone(), info.clone(), 600,300, 200);
+        register_3_validators(deps.as_mut(), env.clone(), info);
+        let info = mock_info(AGENT1, &[]); 
+        nft123_bond_on_validators(deps.as_mut(), env.clone(), info, 600,300, 200);
 
         let env_later = later(&env, (WEEK + HOUR).unwrap());
-        let info = mock_info(&MANAGER1, &[]); 
+        let info = mock_info(MANAGER1, &[]); 
         let msg = ExecuteMsg::CollectAngelRewards {  };
-        let res = execute(deps.as_mut(), env_later.clone(), info.clone(), msg).unwrap();
+        let res = execute(deps.as_mut(), env_later, info, msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "withdraw_delegation_rewards"));
 
         // Suppose the rewards received are 50

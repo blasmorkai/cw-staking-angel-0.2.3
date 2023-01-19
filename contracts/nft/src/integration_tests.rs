@@ -73,7 +73,7 @@ mod tests {
 
     fn get_nft_info(app: &App, nft_contract:&NftContract, token_id:String) -> NftInfoResponse<Metadata> {
         app.wrap()
-            .query_wasm_smart(nft_contract.addr(), &crate::msg::QueryMsg::NftInfo { token_id: token_id } )
+            .query_wasm_smart(nft_contract.addr(), &crate::msg::QueryMsg::NftInfo { token_id} )
             .unwrap()
     }
 
