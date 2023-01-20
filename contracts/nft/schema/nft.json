@@ -231,7 +231,8 @@
         "type": "string",
         "enum": [
           "Bonded",
-          "Unbonding"
+          "Unbonding",
+          "Burnt"
         ]
       },
       "Uint128": {
@@ -628,7 +629,8 @@
           "type": "string",
           "enum": [
             "Bonded",
-            "Unbonding"
+            "Unbonding",
+            "Burnt"
           ]
         },
         "Timestamp": {
@@ -768,7 +770,8 @@
           "type": "string",
           "enum": [
             "Bonded",
-            "Unbonding"
+            "Unbonding",
+            "Burnt"
           ]
         },
         "Uint128": {

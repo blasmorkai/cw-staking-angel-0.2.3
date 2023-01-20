@@ -530,44 +530,8 @@ pub fn execute_remove_validator(deps: DepsMut, env: Env, info: MessageInfo, src_
          .add_attribute("redelegated_amount", amount.amount);
          Ok(res)
     } else {
-         Err(ContractError::InvalidCoin {  })
+         Err(ContractError::RemovingValidatorBondedMismatch {  })
     }
-
-    // // Clippy: if let Some(full_delegation) = option_full_delegation {
-    // if option_full_delegation.is_some() && state_amount != Uint128::zero(){
-    //      // What if the chosen validator is the one we are trying to remove??
-    //     let dst_validator_address = chosen_validator(deps.as_ref(), Some(src_validator_address.clone()))?;
-    
-    //     // Update state with redelegated bonded tokens to validator and validator that is removed
-    //     let mut validator_info = state.validator.load(deps.storage, &dst_validator_address)?;
-    //     validator_info.bonded += state_amount.u128();      
-    //     state.validator.save(deps.storage, &dst_validator_address, &validator_info)?;
-    //     state.validator.remove(deps.storage, &src_validator_address)?;
-
-    //      //Clippy: let amount = full_delegation.amount;
-    //     let amount = option_full_delegation.unwrap().amount;
-    //     // When we redelegate, by default all the pending rewards are claimed.
-    //     let msg = StakingMsg::Redelegate { 
-    //         src_validator:src_validator_address.to_string(), 
-    //         dst_validator: dst_validator_address.clone(), 
-    //         amount: amount.clone() 
-    //     };
-
-    //     let res = Response::new()
-    //     .add_message(msg)
-    //     .add_attribute("action", "remove_validator")
-    //     .add_attribute("address",src_validator_address)
-    //     .add_attribute("redelegated_validator", dst_validator_address)
-    //     .add_attribute("redelegated_denom", amount.denom)
-    //     .add_attribute("redelegated_amount", amount.amount);
-    //     Ok(res)
-    // } else {
-    //     state.validator.remove(deps.storage, &src_validator_address)?;
-    //     let res = Response::new()
-    //     .add_attribute("action", "remove_validator")
-    //     .add_attribute("address",src_validator_address);
-    //     Ok(res)
-    // }
 }
 
 // Check if chain delegated tokens by this contract match the value registered in TOTAL_BONDED state

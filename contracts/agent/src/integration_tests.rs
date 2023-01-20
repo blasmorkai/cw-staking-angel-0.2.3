@@ -198,18 +198,18 @@ mod tests {
 
     fn add_3_validators(
         app: &mut App,
-        staking_contract_addr: &String,
+        staking_contract_addr: &str,
         sender: Addr,
         val1: String,
         val2: String,
         val3: String,
     ) {
-        let msg = staking::msg::ExecuteMsg::AddValidator { address: val1.into(), bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
-        app.execute_contract(sender.clone(), Addr::unchecked(&staking_contract_addr.clone()), &msg, &[]).unwrap();
-        let msg = staking::msg::ExecuteMsg::AddValidator { address: val2.into(), bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
-        app.execute_contract(sender.clone(), Addr::unchecked(&staking_contract_addr.clone()), &msg, &[]).unwrap();
-        let msg = staking::msg::ExecuteMsg::AddValidator { address: val3.into(), bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
-        app.execute_contract(sender.clone(), Addr::unchecked(&staking_contract_addr.clone()), &msg, &[]).unwrap();
+        let msg = staking::msg::ExecuteMsg::AddValidator { address: val1, bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
+        app.execute_contract(sender.clone(), Addr::unchecked(staking_contract_addr), &msg, &[]).unwrap();
+        let msg = staking::msg::ExecuteMsg::AddValidator { address: val2, bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
+        app.execute_contract(sender.clone(), Addr::unchecked(staking_contract_addr), &msg, &[]).unwrap();
+        let msg = staking::msg::ExecuteMsg::AddValidator { address: val3, bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
+        app.execute_contract(sender, Addr::unchecked(staking_contract_addr), &msg, &[]).unwrap();
     }
 
     fn get_nft_all_info(app: &App, nft_contract_addr: String, token_id: String) -> cw721::AllNftInfoResponse<Metadata> {
@@ -369,7 +369,7 @@ mod tests {
         assert_eq!(balance.amount,Uint128::from(4000u128) );
 
         // NFT minted and burnt
-        let all_nft_info = get_nft_all_info(&app, nft_contract_addr.clone(), "1".to_string());
+        let all_nft_info = get_nft_all_info(&app, nft_contract_addr, "1".to_string());
         assert_eq!(all_nft_info.access.owner, String::from(USER2));
         assert_eq!(all_nft_info.info.extension.native, vec![coin(400u128, NATIVE_DENOM)]);
         assert_eq!(all_nft_info.info.extension.status, Status::Burnt);
@@ -392,7 +392,7 @@ mod tests {
         assert_eq!(nft_contract_addr, "contract1".to_string());
 
         let msg = staking::msg::ExecuteMsg::AddValidator { address: VALIDATOR1.into(), bond_denom: NATIVE_DENOM.into(), unbonding_period: WEEK };
-        app.execute_contract(Addr::unchecked(MANAGER1), Addr::unchecked(&staking_contract_addr.clone()), &msg, &[]).unwrap();
+        app.execute_contract(Addr::unchecked(MANAGER1), Addr::unchecked(&staking_contract_addr), &msg, &[]).unwrap();
 
  
         //USER 1 BONDS NFT_ID 0  with 600 tokens
@@ -471,7 +471,7 @@ mod tests {
         let msg = ExecuteMsg::Claim { nft_id: "0".to_string() };
         app.execute_contract(Addr::unchecked(USER1), agent_contract.addr(), &msg, &[]).unwrap(); 
 
-        let all_nft_info = get_nft_all_info(&app, nft_contract_addr.clone(), "0".to_string());
+        let all_nft_info = get_nft_all_info(&app, nft_contract_addr, "0".to_string());
         assert_eq!(all_nft_info.access.owner, String::from(USER1));
         assert_eq!(all_nft_info.info.extension.native, vec![coin(600u128, NATIVE_DENOM)]);
         assert_eq!(all_nft_info.info.extension.status, Status::Burnt);

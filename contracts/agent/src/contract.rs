@@ -150,7 +150,7 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
 
             let nft_id_uint128 = Uint128::from_str(&nft_id)?;
             // Create a new metadata, adding the amount.
-            nft_id_info = format!("Rebond nft_id {}", nft_id.clone());
+            nft_id_info = format!("Rebond nft_id {}", nft_id);
 
             // Storing info to be used on the reply entry point
             let extension = Metadata { native: extension.native, status: Status::Bonded };
@@ -160,7 +160,7 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
             reply_key = EXECUTE_RE_BOND_STAKING_REPLY_ID;
             let bond_msg = staking::msg::ExecuteMsg::Bond { nft_id: nft_id_uint128 };
             WasmMsg::Execute {
-                contract_addr: staking_contract_addr.into(),
+                contract_addr: staking_contract_addr,
                 msg: to_binary(&bond_msg)?,
                 funds: info.funds,
             }
@@ -179,7 +179,7 @@ pub fn execute_bond (deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Option
             reply_key = EXECUTE_NEW_BOND_STAKING_REPLY_ID;
             let bond_msg = staking::msg::ExecuteMsg::Bond { nft_id: current_nft_id };
             WasmMsg::Execute {
-                contract_addr: staking_contract_addr.into(),
+                contract_addr: staking_contract_addr,
                 msg: to_binary(&bond_msg)?,
                 funds: info.funds,
             }
@@ -218,7 +218,7 @@ pub fn execute_unbond(deps: DepsMut, _env: Env, info: MessageInfo, nft_id: Strin
 
     let unbond_msg= staking::msg::ExecuteMsg::Unbond { nft_id: nft_id_uint128, amount: nft_amount};
     let unbond_wasm_msg = WasmMsg::Execute {
-        contract_addr: staking_contract_addr.into(),
+        contract_addr: staking_contract_addr,
         msg: to_binary(&unbond_msg)?,
         funds: vec![],
     };
@@ -282,16 +282,16 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
     let mut vec_submsg : Vec<SubMsg<Empty>> = vec![];
     let mut response_value : String = "no_action".to_string();
 
-    match (reply.clone().id, reply.clone().result) {
+    match (reply.id, reply.clone().result) {
         (INSTANTIATE_NFT_REPLY_ID, SubMsgResult::Ok(_))=> {
             let res = parse_reply_instantiate_data(reply.clone()).unwrap();  
-            let addr = deps.api.addr_validate(res.contract_address.clone().as_str())?;
+            let addr = deps.api.addr_validate(res.contract_address.as_str())?;
             NFT.save(deps.storage, &addr.to_string())?;
             response_value = format!("nft_contract_instantiated address: {}",addr);
         },
         (INSTANTIATE_STAKING_REPLY_ID, SubMsgResult::Ok(_))=>{
             let res = parse_reply_instantiate_data(reply.clone()).unwrap();  
-            let addr = deps.api.addr_validate(res.contract_address.clone().as_str())?;
+            let addr = deps.api.addr_validate(res.contract_address.as_str())?;
             STAKING.save(deps.storage, &addr.to_string())?;
             response_value = format!("staking_contract_instantiated address: {}",addr);
         },
@@ -309,7 +309,7 @@ pub fn reply(deps: DepsMut, _env: Env, reply: Reply) -> Result<Response, Contrac
             submsg= SubMsg::reply_on_success(wasm_msg, reply_key);
             vec_submsg.push(submsg);
 
-            response_value = format!("new_bond nft_id: {}",cache_nft.nft_id.clone());
+            response_value = format!("new_bond nft_id: {}",cache_nft.nft_id);
 
             // Cleaning Cache
             let blank_cache = CacheNFT{ sender: Addr::unchecked("blank"), nft_id: String::from("blank"), extension: Metadata { native: vec![], status: Status::Bonded }};

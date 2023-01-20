@@ -90,6 +90,9 @@ pub enum ContractError {
     #[error("Validator set is empty. Can not bond")]
     ValidatorSetEmpty { },
 
+    #[error("Mismatch on Validator staken and State bonded when removing validator")]
+    RemovingValidatorBondedMismatch {  },
+
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },
 }

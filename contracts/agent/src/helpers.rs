@@ -7,7 +7,7 @@ pub use cw721::{OwnerOfResponse, TokensResponse, NftInfoResponse};
 pub use crate::msg::QueryMsg;
 pub use crate::msg::ExecuteMsg;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct AgentContract(pub Addr);
 
 impl AgentContract {
@@ -20,7 +20,7 @@ impl AgentContract {
         Ok(WasmMsg::Execute {
             contract_addr: self.addr().into(),
             msg,
-            funds: funds,
+            funds,
         }
         .into())
     }
