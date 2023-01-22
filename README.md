@@ -6,7 +6,7 @@ These set of contracts will stake funds from users and collect the staken reward
     
     That NFT is mutable in order to be able to accept more donations from the same user and keep track of the donation status. 
     
-A donation at any moment in time can be ==bonded, unbonding or claimed==.
+A donation at any moment in time can be **bonded, unbonding or claimed**.
 
 ![alt text](./images/bonding.png "Bonding")
 
@@ -26,6 +26,7 @@ The **agent** contract *on instantiation* will itself instantiate the **nft** an
 - **treasury**: account receiving rewards. On current implementation on Juno Testnet it is a multisig contract.
 - **admin**: update contracts versions.
 
+![alt text](./images/manager.png "Manager")
 
 ## Actor model
 
