@@ -135,7 +135,7 @@ describe("Cosmwasm Template Tests", () => {
         };
     }).timeout(100000);
 
-    xit("Query nft and staking contract_address from agent_contract ", async() => {
+    it("Query nft and staking contract_address from agent_contract ", async() => {
         let client = await setupClient(mnemonic, rpcEndpoint, "0.025ujunox");
         // let res = await client.queryContractSmart(contract_cw20_address, {all_allowances:{owner:minter_addr}});
         let query_staking_contract_address = await client.queryContractSmart(agent_contract_address, {get_staking_adress:{}});

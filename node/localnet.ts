@@ -127,7 +127,7 @@ describe("Cosmwasm Template Tests", () => {
         };
     }).timeout(100000);
 
-    it("Query nft and staking contract_address from agent_contract ", async() => {
+    xit("Query nft and staking contract_address from agent_contract ", async() => {
         let data = await getAccountFromMnemonic(mnemonic, "juno"); 
         let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
         let sender = await getAddress(mnemonic);
