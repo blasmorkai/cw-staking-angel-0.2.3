@@ -31,3 +31,10 @@ The **agent** contract *on instantiation* will itself instantiate the **nft** an
 ## Actor model
 
 These contracts rely on the actor model to handle any of the user interactions, meaning that any flow defined on this contract will be either be committed in full or rollbacked completely facing any errors.
+
+
+## Deployment on Juno Testnet
+
+- **Agent**: juno136qxeg4l9s02m4hqcnw9p0nfxvejg2at4s35jc7f658v856u9ndshxzcnw
+- **NFT**: juno1qmyuzkhhx2ucaxels8kmdgnj4y3sgfxhm28q09q56ew3tfmxfrhq6fc94z
+- **Staking**: juno1msj74sh4mxzs9a8tycctl6pp6g42ywnxram29hjtpvmcqccrkczq4es66a
