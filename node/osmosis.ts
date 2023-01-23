@@ -1,74 +1,78 @@
-import { CosmWasmClient, SigningCosmWasmClient, Secp256k1HdWallet, GasPrice, Coin } from "cosmwasm";
+import { SigningCosmWasmClient, Secp256k1HdWallet, GasPrice, Coin } from "cosmwasm";
 
 import * as fs from 'fs';
 import axios from 'axios';
+import { ClientRequest } from "http";
+import assert from "assert";
 
 
-const rpcEndpoint = "https://juno-testnet-rpc.polkachu.com/";
-
-// const config = {
-//     chainId: "uni-3",
-//     rpcEndpoint: rpcEndpoint,
-//     prefix: "juno",
-// };
-
-
+const rpcEndpoint= "https://rpc-test.osmosis.zone";
+// const rpcEndpoint = "https://rpc.testnet.osmosis.zone";
+// const rpcEndpoint = "https://lcd.osmo-test.ccvalidators.com/";
+// const rpcEndpoint = "https://testnet-rest.osmosis.zone/"
 const agent_wasm = fs.readFileSync("../artifacts/agent.wasm");
 const nft_wasm = fs.readFileSync("../artifacts/nft.wasm");
 const staking_wasm = fs.readFileSync("../artifacts/staking.wasm");
 
-const mnemonic = "between anchor impact pact lazy custom rookie load ride ramp piece pony"; // juno1u0h22tk6hrtvulfhq22pcrz5fj9c0cnhqelcpx
-const prefix = "juno";
 
-const agent_code_id = 4192;
-const nft_code_id = 4193;
-const staking_code_id = 4194;
+const agent_code_id = 5451;
+const nft_code_id = 5452;
+const staking_code_id = 5453;
 
-const treasury_address = "juno1vlffrn56q0z06wj95k2u5m2hhl78r5w6hj05rh9gdfn6knsyt08qluruw7";
-//multisig1_address const mnemonic = "prosper twelve menu smile canoe vacant stool moment rough weird avoid visual"; // juno1avqzvtvvxv67fje267y8zx9c65838nmjyrqgsh
-//multisig2_address const mnemonic = "olympic multiply song tuna estate live fly stomach upon text test birth"; // juno19g70wvrnzavaw03d9szxk47n3aeeettchtzanq
-//multisig3_address const mnemonic = "squirrel cube entry gas then dignity lens very rigid duty shrimp moment"; // juno12dyghgkfh4vfmxqeh9y7sdw78zzeksll2aq2fs
+const mnemonic ="snake matter broom era animal aspect robust fresh arrest wealth merry attract"; // osmo1t6c0tqwz92jt03g0vrhdegl83mwcjnye6l5ded
+const mnemonic_admin = "mesh this vehicle buffalo jazz mechanic edit hill review menu planet like"; // osmo1f9my2kvz3664pdnvxg5ag6wpdvezzvyhf07zqe
+const mnemonic_manager = "move neglect federal banner clarify glare disagree bird screen bitter hire connect"; // osmo1r8ph8pnqd9pz3gj5yzsq5lw2jykd6x237dmvs0
+const mnemonic_treasury = "brave crop demand kitchen broken soft pipe film aerobic warrior arena strike"; // osmo1n9s48xuaxgrwr2fdtzp8mcs4vuny8jx5caysry
+const mnemonic_another = "until hawk beauty virus nephew evolve hood crucial humble now inspire stairs"; // osmo1u3t3y27x502wlv8gnyx5q243sw3yg24kmwgq36
 
-const mnemonic_admin = "worry unveil bomb music pact final odor roof document excuse amazing flag"; // juno1e8q0t7lt5hnxjk7g5ec5f7t35x6jymxmunnqpd
-const mnemonic_manager = "furnace best mimic know mixed december multiply airport giant donkey ostrich siren"; // juno1urcl7hkga3j9ek27lvwx784ax9452cn9492826
+const agent_contract_address = "osmo1npt4krn5upax75c737mugd9x0u8kvjugz59yd4jyt05sznhmj9fqkzsflm"; 
+const admin_address = "osmo1f9my2kvz3664pdnvxg5ag6wpdvezzvyhf07zqe";
+const manager_address= "osmo1r8ph8pnqd9pz3gj5yzsq5lw2jykd6x237dmvs0";
+const treasury_address = "osmo1n9s48xuaxgrwr2fdtzp8mcs4vuny8jx5caysry";
+const nft_contract_address = "osmo1kf7qmfzza50rggdwjge7j6djnhpw8m736r8cr55hz0ys4d34tmhss3wtzg";
+const staking_contract_address = "osmo1z3n462xldj0whwz2tyws7un6qyydwypfusch4pjm9mqr8vrl2c8sufh6jn";
 
-const agent_contract_address = "juno136qxeg4l9s02m4hqcnw9p0nfxvejg2at4s35jc7f658v856u9ndshxzcnw"; 
-const admin_address = "juno1e8q0t7lt5hnxjk7g5ec5f7t35x6jymxmunnqpd";
-const manager_address= "juno1urcl7hkga3j9ek27lvwx784ax9452cn9492826";
-const nft_contract_address = "juno1qmyuzkhhx2ucaxels8kmdgnj4y3sgfxhm28q09q56ew3tfmxfrhq6fc94z";
-const staking_contract_address = "juno1msj74sh4mxzs9a8tycctl6pp6g42ywnxram29hjtpvmcqccrkczq4es66a";
+const validator_address = "osmovaloper1c584m4lq25h83yp6ag8hh4htjr92d954kphp96";
+
 
 async function setupClient(mnemonic: string, rpc: string, gas: string | undefined): Promise<SigningCosmWasmClient> {
     if (gas === undefined) {
-        let wallet = await Secp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'juno'});
+        let wallet = await Secp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'osmo'});
         let client = await SigningCosmWasmClient.connectWithSigner(rpc, wallet);
         return client;
     } else {
         let gas_price = GasPrice.fromString(gas);
-        let wallet = await Secp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'juno' });
+        let wallet = await Secp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'osmo' });
         let client = await SigningCosmWasmClient.connectWithSigner(rpc, wallet, { gasPrice: gas_price });
         return client;
     }
 }
 
-async function getAddress(mnemonic:string) {
-    let wallet = await Secp256k1HdWallet.fromMnemonic(mnemonic, { prefix: prefix });
+async function getAddress(mnemonic: string, prefix: string = 'osmo') {
+    let wallet = await Secp256k1HdWallet.fromMnemonic(mnemonic, { prefix });
     let accounts = await wallet.getAccounts();
     return accounts[0].address;
 }
 
-describe("Cosmwasm Template Tests", () => {
+async function delay(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+describe("Angel Staking Test", () => {
     xit("Generate Wallet", async () => {
         let wallet = await Secp256k1HdWallet.generate(12);
         console.log(wallet.mnemonic);
+        console.log(await getAddress(wallet.mnemonic));
     });
 
+    xit("Get Address", async() => {
+        console.log(await getAddress(mnemonic));
+    }).timeout(200000);
+
     xit("Get Testnet Tokens", async () => {
-        //let wallet = await Secp256k1HdWallet.fromMnemonic(mnemonic, { prefix: 'juno' });
-        //console.log(await wallet.getAccounts());
         console.log(await getAddress(mnemonic));
         try {
-            let res = await axios.post("https://faucet.uni.juno.deuslabs.fi/credit", { "denom": "ujunox", "address": await getAddress(mnemonic) });
+            let res = await axios.post("https://faucet.osmosis.zone", { "denom": "uosmo", "address": await getAddress(mnemonic) });
             console.log(res);
         } catch (e) {
             console.log(e);
@@ -76,14 +80,21 @@ describe("Cosmwasm Template Tests", () => {
     }).timeout(100000);
 
     xit("Send Testnet Tokens", async () => {
-        let client = await setupClient(mnemonic, rpcEndpoint, "0.025ujunox");
-        let coin:Coin = {denom: "ujunox", amount: "3000000"};
-        client.sendTokens(await getAddress(mnemonic), "juno1jjeaun6mlrtv0wzfpt9u57hx6keqsvv7ltuj4j", [coin], "auto");
+        let client = await setupClient(mnemonic, rpcEndpoint, "0.025uosmo");
+        let receiver = "";
+        let res = await client.sendTokens(await getAddress(mnemonic), receiver, [{denom:"uosmo", amount:"1000000"}], "auto");
+        console.log(res);
+    }).timeout(100000);
+
+    xit("Balance Testnet Tokens", async () => {
+        let client = await setupClient(mnemonic, rpcEndpoint, "0.025uosmo");
+        let res = await client.getBalance(await getAddress(mnemonic), "uosmo");
+        console.log(res);  
     }).timeout(100000);
 
     xit("Upload agent_wasm to testnet", async () => {
         //upload NFT contract to testnet twice and get two code_id's
-        let client = await setupClient(mnemonic, rpcEndpoint, "0.025ujunox");
+        let client = await setupClient(mnemonic, rpcEndpoint, "0.025uosmo");
         let sender = await getAddress(mnemonic);
         let res = await client.upload(sender, agent_wasm, "auto", undefined);
         console.log(res);
@@ -91,7 +102,7 @@ describe("Cosmwasm Template Tests", () => {
 
     xit("Upload nft to testnet", async () => {
         //upload NFT contract to testnet twice and get two code_id's
-        let client = await setupClient(mnemonic, rpcEndpoint, "0.025ujunox");
+        let client = await setupClient(mnemonic, rpcEndpoint, "0.025uosmo");
         let sender = await getAddress(mnemonic);
         let res = await client.upload(sender, nft_wasm, "auto", undefined);
         console.log(res);
@@ -99,22 +110,14 @@ describe("Cosmwasm Template Tests", () => {
 
     xit("Upload staking to testnet", async () => {
         //upload NFT contract to testnet twice and get two code_id's
-        let client = await setupClient(mnemonic, rpcEndpoint, "0.025ujunox");
+        let client = await setupClient(mnemonic, rpcEndpoint, "0.025uosmo");
         let sender = await getAddress(mnemonic);
         let res = await client.upload(sender, staking_wasm, "auto", undefined);
         console.log(res);
     }).timeout(100000);
 
-    // pub struct InstantiateMsg {
-    //     pub nft_code_id: u64,	
-    //     pub staking_code_id: u64, 
-    //     pub admin: String,
-    //     pub manager: String,
-    //     pub treasury: String,
-    //  }
-
     xit("Instantiate agent on testnet", async () => {
-        let client = await setupClient(mnemonic, rpcEndpoint, "0.025ujunox");
+        let client = await setupClient(mnemonic, rpcEndpoint, "0.025uosmo");
         let sender = await getAddress(mnemonic);
         let res = await client.instantiate(
             sender,
@@ -139,7 +142,8 @@ describe("Cosmwasm Template Tests", () => {
     }).timeout(100000);
 
     xit("Query nft and staking contract_address from agent_contract ", async() => {
-        let client = await setupClient(mnemonic, rpcEndpoint, "0.025ujunox");
+        let client = await setupClient(mnemonic, rpcEndpoint, "0.025uosmo");
+        let sender = await getAddress(mnemonic);
         // let res = await client.queryContractSmart(contract_cw20_address, {all_allowances:{owner:minter_addr}});
         let query_staking_contract_address = await client.queryContractSmart(agent_contract_address, {get_staking_adress:{}});
         console.log("### Staking contract address stored on agent contract: "+ query_staking_contract_address);
@@ -151,19 +155,26 @@ describe("Cosmwasm Template Tests", () => {
         console.log("### Total nft/tokens on nft contract: "+num_nft_tokens.count);
     }).timeout(100000);
 
-    //AddValidator {address: String, bond_denom: String, unbonding_period: Duration},
-
     xit("Add Validator to staking contract", async() => {
-        let client = await setupClient(mnemonic_manager, rpcEndpoint, "0.025ujunox");
+        let client = await setupClient(mnemonic_manager, rpcEndpoint, "0.025uosmo");
+        let manager = await getAddress(mnemonic_manager);
         let res = await client.execute(
-            await getAddress(mnemonic), staking_contract_address, {add_validator : { address: "", bond_denom: "ujunox", unbonding_period: "Message"}}, "auto", "", [{amount: "1000", denom: "ujunox"}]
+             manager, staking_contract_address, {
+                add_validator : { 
+                    address: validator_address, 
+                    bond_denom: "osmo",
+                    unbonding_period: { time: 1209600 },             // 60 * 60 * 24 * 14
+                }
+            }, 
+            "auto", "", []
         );
-        console.log(res);
+        //console.log(res);
 
         for (let i = 0; i<res.logs[0].events.length; i++) {
             console.log("------------EVENTS[%s]-----------------",i);
             console.log(res.logs[0].events[i]);          
         }
-     }).timeout(20000);
+     }).timeout(20000); 
+
 
 });

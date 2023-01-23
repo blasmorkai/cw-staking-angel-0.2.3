@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError, Uint128, Uint64};
+use cosmwasm_std::{StdError, Uint128, Uint64, Validator};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -9,8 +9,8 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
-    #[error("Validator '{validator}' not in current validator set")]
-    NotInValidatorSet { validator: String },
+    #[error("Validator '{validator}' not in current validator set: {validator_list}")]
+    NotInValidatorSet { validator: String, validator_list : String },
 
     #[error("Different denominations in bonds: '{denom1}' vs. '{denom2}'")]
     DifferentBondDenom { denom1: String, denom2: String },
