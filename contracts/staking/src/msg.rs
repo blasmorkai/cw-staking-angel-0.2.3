@@ -25,6 +25,7 @@ pub enum ExecuteMsg {
     RemoveValidator {address: String},
     BondCheck {},
     CollectAngelRewards {},    
+    TransferBalance {},    
 }
 
 

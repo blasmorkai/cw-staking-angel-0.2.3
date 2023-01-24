@@ -68,9 +68,42 @@ async function setupClient(mnemonic: string, rpc: string, gas: string | undefine
 async function getAddress(mnemonic:string) {
     let wallet = await Secp256k1HdWallet.fromMnemonic(mnemonic, { prefix: prefix_address });
     let accounts = await wallet.getAccounts();
-    console.log("Address: " + accounts[0].address);
+    //console.log("Address: " + accounts[0].address);
     return accounts[0].address;
 }
+
+async function printBalances(header:string) {
+    let client_user = await setupClient(mnemonic, rpcEndpoint, "0.025uosmo");
+    let address_user = await getAddress(mnemonic);
+    let balance_user = await client_user.getBalance(address_user, "ujuno");
+    console.log("----------------------"+header+"------------------------------");
+    console.log("");
+    console.log("Balance user " + address_user + " : "+ balance_user.amount + " " + balance_user.denom);
+
+    let balance_staking = await client_user.getBalance(staking_contract_address, "ujuno");
+    console.log("Balance staking contract " + staking_contract_address + " : "+ balance_staking.amount + " " + balance_staking.denom);
+
+    let balance_treasury = await client_user.getBalance(treasury_address, "ujuno");
+    console.log("Balance treasury " + treasury_address + " : "+ balance_treasury.amount + " " + balance_treasury.denom);
+}
+
+
+async function printNftInfo(header:string, nft_id1:string) {
+    let data = await getAccountFromMnemonic(mnemonic, "juno"); 
+    let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+    let nft_info = await client.queryContractSmart(nft_contract_address, {all_nft_info:{token_id: nft_id1}});
+    console.log("----------------------"+header+"------------------------------");
+    console.log("NFT owner: " + nft_info.access.owner);
+    console.log("Tokens bonded:");
+    console.log(nft_info.info.extension.native);
+    console.log("Status: "+ nft_info.info.extension.status);
+    console.log("--------------------------------------------------------------"); 
+    // BondedByNFT { nft_id }
+    let nft_bonded_staking_contract = await client.queryContractSmart(staking_contract_address, {bonded_by_n_f_t:{nft_id: nft_id1}});
+    console.log("Tokens bonded on staking contract by nft "+nft_id1+" : "+ nft_bonded_staking_contract);
+}
+
+
 
 export const getAccountFromMnemonic = async (mnemonic: any, prefix: string = "cosmos") => {
     let wallet = await Secp256k1HdWallet.fromMnemonic(mnemonic, { prefix: prefix });
@@ -82,21 +115,21 @@ export const getAccountFromMnemonic = async (mnemonic: any, prefix: string = "co
 }
 
 describe("Cosmwasm Template Tests", () => {
-    xit("Generate Wallet", async () => {
-        let wallet = await Secp256k1HdWallet.generate(24);
-        console.log(wallet.mnemonic);
-        let sender = await getAddress(wallet.mnemonic);
-        console.log(sender);
-    });
+    // xit("Generate Wallet", async () => {
+    //     let wallet = await Secp256k1HdWallet.generate(24);
+    //     console.log(wallet.mnemonic);
+    //     let sender = await getAddress(wallet.mnemonic);
+    //     console.log(sender);
+    // });
 
-    xit("Balance Testnet Tokens", async () => {
-        let client = await setupClient(mnemonic, rpcEndpoint, "0.025uosmo");
-        let address = await getAddress(mnemonic);
-        let res = await client.getBalance(address, "ujuno");
-        console.log("Balance for " + address + " : "+ res.amount + " " + res.denom);
-        let staking_contract_balance = await client.getBalance(staking_contract_address, "ujuno");
-        console.log("Balance for staking contract : "+ staking_contract_balance.amount + " " + staking_contract_balance.denom);  
-    }).timeout(100000);
+    // xit("Balance Testnet Tokens", async () => {
+    //     let client = await setupClient(mnemonic, rpcEndpoint, "0.025uosmo");
+    //     let address = await getAddress(mnemonic);
+    //     let res = await client.getBalance(address, "ujuno");
+    //     console.log("Balance for " + address + " : "+ res.amount + " " + res.denom);
+    //     let staking_contract_balance = await client.getBalance(staking_contract_address, "ujuno");
+    //     console.log("Balance for staking contract : "+ staking_contract_balance.amount + " " + staking_contract_balance.denom);  
+    // }).timeout(100000);
 
     xit("Upload agent_wasm to local testnet", async () => {
         let data = await getAccountFromMnemonic(mnemonic, "juno"); 
@@ -148,21 +181,20 @@ describe("Cosmwasm Template Tests", () => {
         };
     }).timeout(100000);
 
-    xit("Query nft and staking contract_address from agent_contract ", async() => {
-        let data = await getAccountFromMnemonic(mnemonic, "juno"); 
-        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
-        let sender = await getAddress(mnemonic);
-        // let res = await client.queryContractSmart(contract_cw20_address, {all_allowances:{owner:minter_addr}});
-        let query_staking_contract_address = await client.queryContractSmart(agent_contract_address, {get_staking_adress:{}});
-        console.log("### Staking contract address stored on agent contract: "+ query_staking_contract_address);
-        let query_nft_contract_address = await client.queryContractSmart(agent_contract_address, {get_n_f_t_adress:{}});
-        console.log("### NFT contract address stored on agent contract: "+query_nft_contract_address);
-        let bonded_tokens = await client.queryContractSmart(query_staking_contract_address, {total_bonded:{}});
-        console.log("### Total Bonded on staking contract: "+bonded_tokens);
-        let num_nft_tokens = await client.queryContractSmart(query_nft_contract_address, {num_tokens:{}});
-        console.log("### Total nft/tokens on nft contract: "+num_nft_tokens.count);
-    }).timeout(100000);
-
+    // xit("Query nft and staking contract_address from agent_contract ", async() => {
+    //     let data = await getAccountFromMnemonic(mnemonic, "juno"); 
+    //     let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+    //     let sender = await getAddress(mnemonic);
+    //     // let res = await client.queryContractSmart(contract_cw20_address, {all_allowances:{owner:minter_addr}});
+    //     let query_staking_contract_address = await client.queryContractSmart(agent_contract_address, {get_staking_adress:{}});
+    //     console.log("### Staking contract address stored on agent contract: "+ query_staking_contract_address);
+    //     let query_nft_contract_address = await client.queryContractSmart(agent_contract_address, {get_n_f_t_adress:{}});
+    //     console.log("### NFT contract address stored on agent contract: "+query_nft_contract_address);
+    //     let bonded_tokens = await client.queryContractSmart(query_staking_contract_address, {total_bonded:{}});
+    //     console.log("### Total Bonded on staking contract: "+bonded_tokens);
+    //     let num_nft_tokens = await client.queryContractSmart(query_nft_contract_address, {num_tokens:{}});
+    //     console.log("### Total nft/tokens on nft contract: "+num_nft_tokens.count);
+    // }).timeout(100000);
 
     xit("Add Validator to staking contract", async() => {
         let data = await getAccountFromMnemonic(mnemonic_manager, "juno"); 
@@ -186,115 +218,240 @@ describe("Cosmwasm Template Tests", () => {
         }
      }).timeout(20000); 
 
-     xit("Bond Check", async() => {
+    //  xit("Bond Check", async() => {
+    //     let data = await getAccountFromMnemonic(mnemonic_manager, "juno"); 
+    //     let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+    //     let manager = await getAddress(mnemonic_manager);
+    //     let res = await client.execute(
+    //          manager, staking_contract_address, {
+    //             bond_check : { }
+    //         }, 
+    //         "auto", "", []
+    //     );
+    //     //console.log(res);
+
+    //     for (let i = 0; i<res.logs[0].events.length; i++) {
+    //         console.log("------------EVENTS[%s]-----------------",i);
+    //         console.log(res.logs[0].events[i]);          
+    //     }
+    //  }).timeout(20000); 
+
+
+    //  xit("Bond some tokens and get an NFT back", async() => {
+    //     let data = await getAccountFromMnemonic(mnemonic, "juno"); 
+    //     let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+    //     let user = await getAddress(mnemonic);
+    //     let res = await client.execute(
+    //          user, agent_contract_address, {
+    //             bond : { }
+    //         }, 
+    //         "auto", "", [{amount: "1000000", denom: "ujuno"}]
+    //     );
+    //     //console.log(res);
+
+    //     for (let i = 0; i<res.logs[0].events.length; i++) {
+    //         console.log("------------EVENTS[%s]-----------------",i);
+    //         console.log(res.logs[0].events[i]);          
+    //     }
+    //  }).timeout(20000);   
+
+    //  xit("ReBond some tokens on the nft 0", async() => {
+    //     let data = await getAccountFromMnemonic(mnemonic, "juno"); 
+    //     let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+    //     let user = await getAddress(mnemonic);
+    //     let res = await client.execute(
+    //          user, agent_contract_address, {
+    //             bond : { nft_id: "0" }
+    //         }, 
+    //         "auto", "", [{amount: "3000", denom: "ujuno"}]
+    //     );
+    //     //console.log(res);
+
+    //     for (let i = 0; i<res.logs[0].events.length; i++) {
+    //         console.log("------------EVENTS[%s]-----------------",i);
+    //         console.log(res.logs[0].events[i]);          
+    //     }
+    //  }).timeout(20000);  
+
+    //  xit("UnBond tokens from nft 1", async() => {
+    //     let data = await getAccountFromMnemonic(mnemonic, "juno"); 
+    //     let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+    //     let user = await getAddress(mnemonic);
+    //     let res = await client.execute(
+    //          user, agent_contract_address, {
+    //             unbond : { nft_id: "1" }
+    //         }, 
+    //         "auto", "", []
+    //     );
+    //     //console.log(res);
+
+    //     for (let i = 0; i<res.logs[0].events.length; i++) {
+    //         console.log("------------EVENTS[%s]-----------------",i);
+    //         console.log(res.logs[0].events[i]);          
+    //     }
+    //  }).timeout(20000);
+
+    //  xit("Claim tokens from nft 1", async() => {
+    //     let data = await getAccountFromMnemonic(mnemonic, "juno"); 
+    //     let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+    //     let user = await getAddress(mnemonic);
+    //     let res = await client.execute(
+    //          user, agent_contract_address, {
+    //             claim : { nft_id: "1" }
+    //         }, 
+    //         "auto", "", []
+    //     );
+    //     //console.log(res);
+
+    //     for (let i = 0; i<res.logs[0].events.length; i++) {
+    //         console.log("------------EVENTS[%s]-----------------",i);
+    //         console.log(res.logs[0].events[i]);          
+    //     }
+    //  }).timeout(20000);
+
+    // xit("12b.- Claim pending rewards: Send accumulated bonding rewards from validators to TREASURY", async() => {
+    //     let data = await getAccountFromMnemonic(mnemonic_manager, "juno"); 
+    //     let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+    //     let manager = await getAddress(mnemonic_manager);
+    //     let res = await client.execute(
+    //          manager, staking_contract_address, {
+    //             collect_angel_rewards : { }
+    //         }, 
+    //         "auto", "", []
+    //     );
+    //     //console.log(res);
+
+    //     for (let i = 0; i<res.logs[0].events.length; i++) {
+    //         console.log("------------EVENTS[%s]-----------------",i);
+    //         console.log(res.logs[0].events[i]);          
+    //     }
+    //  }).timeout(20000); 
+    
+    //  xit("Query nft information ", async() => {
+    //     let data = await getAccountFromMnemonic(mnemonic, "juno"); 
+    //     let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+    //     let sender = await getAddress(mnemonic);
+    //     // let res = await client.queryContractSmart(contract_cw20_address, {all_allowances:{owner:minter_addr}});
+    //     let nft_info = await client.queryContractSmart(nft_contract_address, {all_nft_info:{token_id: "1"}});
+    //     //console.log(nft_info);
+    //     console.log("NFT owner: " + nft_info.access.owner);
+    //     console.log("Tokens bonded:");
+    //     console.log(nft_info.info.extension.native);
+    //     console.log("Status: "+ nft_info.info.extension.status);
+    //     console.log("-------------------------"); 
+    //     // BondedByNFT { nft_id }
+    //     let nft_bonded_staking_contract = await client.queryContractSmart(staking_contract_address, {bonded_by_n_f_t:{nft_id: "0"}});
+    //     console.log("Tokens bonded on staking contract by nft 0 : "+ nft_bonded_staking_contract);
+    // }).timeout(100000);
+
+
+
+
+
+
+
+
+
+
+    xit("1.- Capstone Presentation - Initial Balances", async() => {
+        setTimeout(() => { printBalances("INITIAL BALANCES"); }, 3000);
+    }).timeout(20000);  
+
+    xit("2.- Capstone Presentation - Bonding NFT", async() => {
+        console.log("------------------------BONDING NFT------2000000-ujuno-----------");
+        let data = await getAccountFromMnemonic(mnemonic, "juno");
+        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+        let user_address = await getAddress(mnemonic);
+        let res = await client.execute(
+            user_address, agent_contract_address, {
+                bond : { }
+            }, 
+            "auto", "", [{amount: "2000000", denom: "ujuno"}]
+        );
+        console.log(res);
+     }).timeout(20000);  
+
+    xit("3.- Capstone Presentation - Print NFT Info", async() => {
+        setTimeout(() => { printNftInfo("NFT 0 INFO","0"); }, 3000);
+     }).timeout(20000);  
+
+    xit("4.- Capstone Presentation - Print Balances after Bonding", async() => {
+        setTimeout(() => { printBalances("BALANCES AFTER BONDING NFT WITH 2000000 ujuno"); }, 3000);
+    }).timeout(20000);
+
+    xit("5.- Capstone Presentation - ReBonding NFT", async() => {
+        console.log("------------------------RE-BONDING NFT------2000000-ujuno-----------");
+        let data = await getAccountFromMnemonic(mnemonic, "juno");
+        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+        let user_address = await getAddress(mnemonic);
+        let res = await client.execute(
+            user_address, agent_contract_address, {
+                bond : { nft_id: "0" }
+            }, 
+            "auto", "", [{amount: "2000000", denom: "ujuno"}]
+        );
+        console.log(res);
+     }).timeout(20000); 
+
+     xit("6.- Capstone Presentation - Print NFT Info", async() => {
+        setTimeout(() => { printNftInfo("NFT 0 INFO","0"); }, 3000);
+     }).timeout(20000);
+
+     xit("7.- Capstone Presentation - UnBonding NFT", async() => {
+        console.log("------------------------RE-BONDING NFT------4000000-ujuno-----------");
+        let data = await getAccountFromMnemonic(mnemonic, "juno");
+        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+        let user_address = await getAddress(mnemonic);
+        let res = await client.execute(
+            user_address, agent_contract_address, {
+                unbond : { nft_id: "0" }
+            }, 
+            "auto", "", []
+        );
+        console.log(res);
+     }).timeout(20000);
+     
+     xit("8.- Capstone Presentation - Print NFT Info", async() => {
+        setTimeout(() => { printNftInfo("NFT 0 INFO","0"); }, 3000);
+     }).timeout(20000);
+
+     xit("9.- Capstone Presentation - Claiming NFT", async() => {
+        console.log("------------------------CLAIMING NFT------4000000-ujuno-----------");
+        let data = await getAccountFromMnemonic(mnemonic, "juno");
+        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+        let user_address = await getAddress(mnemonic);
+        let res = await client.execute(
+            user_address, agent_contract_address, {
+                claim : { nft_id: "0" }
+            }, 
+            "auto", "", []
+        );
+        console.log(res);
+     }).timeout(20000);
+
+    xit("10.- Capstone Presentation - Print NFT Info", async() => {
+        setTimeout(() => { printNftInfo("NFT 0 INFO","0"); }, 3000);
+     }).timeout(20000);
+
+    xit("11.- Capstone Presentation - Balances after claiming nft funds", async() => {
+        setTimeout(() => { printBalances("BALANCES after CLAIMING"); }, 3000);
+    }).timeout(20000);      
+
+    xit("12.- Capstone Presentation - Transfer accumulated rewards to TREASURY", async() => {
         let data = await getAccountFromMnemonic(mnemonic_manager, "juno"); 
         let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
         let manager = await getAddress(mnemonic_manager);
         let res = await client.execute(
              manager, staking_contract_address, {
-                bond_check : { }
+                transfer_balance : { }
             }, 
             "auto", "", []
         );
-        //console.log(res);
-
-        for (let i = 0; i<res.logs[0].events.length; i++) {
-            console.log("------------EVENTS[%s]-----------------",i);
-            console.log(res.logs[0].events[i]);          
-        }
-     }).timeout(20000); 
-
-
-     xit("Bond some tokens and get an NFT back", async() => {
-        let data = await getAccountFromMnemonic(mnemonic, "juno"); 
-        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
-        let user = await getAddress(mnemonic);
-        let res = await client.execute(
-             user, agent_contract_address, {
-                bond : { }
-            }, 
-            "auto", "", [{amount: "1000000", denom: "ujuno"}]
-        );
-        //console.log(res);
-
-        for (let i = 0; i<res.logs[0].events.length; i++) {
-            console.log("------------EVENTS[%s]-----------------",i);
-            console.log(res.logs[0].events[i]);          
-        }
-     }).timeout(20000);   
-
-     xit("ReBond some tokens on the nft 0", async() => {
-        let data = await getAccountFromMnemonic(mnemonic, "juno"); 
-        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
-        let user = await getAddress(mnemonic);
-        let res = await client.execute(
-             user, agent_contract_address, {
-                bond : { nft_id: "0" }
-            }, 
-            "auto", "", [{amount: "3000", denom: "ujuno"}]
-        );
-        //console.log(res);
-
-        for (let i = 0; i<res.logs[0].events.length; i++) {
-            console.log("------------EVENTS[%s]-----------------",i);
-            console.log(res.logs[0].events[i]);          
-        }
-     }).timeout(20000);  
-
-     xit("UnBond tokens from nft 1", async() => {
-        let data = await getAccountFromMnemonic(mnemonic, "juno"); 
-        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
-        let user = await getAddress(mnemonic);
-        let res = await client.execute(
-             user, agent_contract_address, {
-                unbond : { nft_id: "1" }
-            }, 
-            "auto", "", []
-        );
-        //console.log(res);
-
-        for (let i = 0; i<res.logs[0].events.length; i++) {
-            console.log("------------EVENTS[%s]-----------------",i);
-            console.log(res.logs[0].events[i]);          
-        }
+        console.log(res);
      }).timeout(20000);
 
-     xit("Claim tokens from nft 1", async() => {
-        let data = await getAccountFromMnemonic(mnemonic, "juno"); 
-        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
-        let user = await getAddress(mnemonic);
-        let res = await client.execute(
-             user, agent_contract_address, {
-                claim : { nft_id: "1" }
-            }, 
-            "auto", "", []
-        );
-        //console.log(res);
-
-        for (let i = 0; i<res.logs[0].events.length; i++) {
-            console.log("------------EVENTS[%s]-----------------",i);
-            console.log(res.logs[0].events[i]);          
-        }
-     }).timeout(20000);
-
-     
-     xit("Query nft information ", async() => {
-        let data = await getAccountFromMnemonic(mnemonic, "juno"); 
-        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
-        let sender = await getAddress(mnemonic);
-        // let res = await client.queryContractSmart(contract_cw20_address, {all_allowances:{owner:minter_addr}});
-        let nft_info = await client.queryContractSmart(nft_contract_address, {all_nft_info:{token_id: "1"}});
-        //console.log(nft_info);
-        console.log("NFT owner: " + nft_info.access.owner);
-        console.log("Tokens bonded:");
-        console.log(nft_info.info.extension.native);
-        console.log("Status: "+ nft_info.info.extension.status);
-        console.log("-------------------------"); 
-        // BondedByNFT { nft_id }
-        let nft_bonded_staking_contract = await client.queryContractSmart(staking_contract_address, {bonded_by_n_f_t:{nft_id: "0"}});
-        console.log("Tokens bonded on staking contract by nft 0 : "+ nft_bonded_staking_contract);
-    }).timeout(100000);
-
-
+    xit("13.- Capstone Presentation - Balances after claiming rewards", async() => {
+        setTimeout(() => { printBalances("BALANCES after CLAIMING"); }, 3000);
+    }).timeout(20000);  
 });
 

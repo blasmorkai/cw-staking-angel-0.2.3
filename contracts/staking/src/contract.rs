@@ -62,6 +62,7 @@ pub fn execute(
         ExecuteMsg::RemoveValidator { address } => execute_remove_validator (deps, env, info, address, ),
         ExecuteMsg::BondCheck {} => execute_bond_check(deps.as_ref(), env, info),
         ExecuteMsg::CollectAngelRewards {  } => execute_collect_rewards(deps, env, info),
+        ExecuteMsg::TransferBalance {  } => execute_transfer_balance(deps, env, info),
     }
 }
 
@@ -619,7 +620,7 @@ fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Res
     Ok(res)
 }
 
-fn _execute_transfer_balance (deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError>{
+fn execute_transfer_balance (deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError>{
     let manager = MANAGER.load(deps.storage)?;
     if info.sender != manager {
         return Err(ContractError::Unauthorized {});

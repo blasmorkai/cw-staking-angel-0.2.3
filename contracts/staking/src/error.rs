@@ -57,7 +57,7 @@ pub enum ContractError {
     #[error("Validator '{validator}' has already been registered to this contract")]
     ValidatorAlreadyRegistered { validator: String },
 
-    #[error("Validator '{denom}' has already been registered to this contract")]
+    #[error("Denomination '{denom}' can not be bonded")]
     DenominationCanNotBeBonded { denom: String },
 
     #[error("Bonded difference: Chain bonded - {total_bonded} , contract bonded - {state_total_bonded}")]
