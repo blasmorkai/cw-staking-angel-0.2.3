@@ -398,7 +398,7 @@ describe("Cosmwasm Template Tests", () => {
      }).timeout(20000);
 
      xit("7.- Capstone Presentation - UnBonding NFT", async() => {
-        console.log("------------------------RE-BONDING NFT------4000000-ujuno-----------");
+        console.log("------------------------UN-BONDING NFT------4000000-ujuno-----------");
         let data = await getAccountFromMnemonic(mnemonic, "juno");
         let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
         let user_address = await getAddress(mnemonic);
@@ -450,7 +450,25 @@ describe("Cosmwasm Template Tests", () => {
         console.log(res);
      }).timeout(20000);
 
-    xit("13.- Capstone Presentation - Balances after claiming rewards", async() => {
+    xit("12b.- Claim pending rewards: Send accumulated bonding rewards from validators to TREASURY", async() => {
+        let data = await getAccountFromMnemonic(mnemonic_manager, "juno"); 
+        let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
+        let manager = await getAddress(mnemonic_manager);
+        let res = await client.execute(
+             manager, staking_contract_address, {
+                collect_angel_rewards : { }
+            }, 
+            "auto", "", []
+        );
+        console.log(res);
+
+        // for (let i = 0; i<res.logs[0].events.length; i++) {
+        //     console.log("------------EVENTS[%s]-----------------",i);
+        //     console.log(res.logs[0].events[i]);          
+        // }
+     }).timeout(20000); 
+
+    it("13.- Capstone Presentation - Balances after claiming rewards", async() => {
         setTimeout(() => { printBalances("BALANCES after CLAIMING"); }, 3000);
     }).timeout(20000);  
 });

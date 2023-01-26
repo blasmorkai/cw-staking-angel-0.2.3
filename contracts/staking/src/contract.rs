@@ -591,7 +591,7 @@ fn get_all_bonded(querier: &QuerierWrapper, contract: &Addr) -> Result<Uint128, 
 }
 
 // Collect pending rewards from all validators
-fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError>{
+fn execute_collect_rewards ( deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError>{
     let manager = MANAGER.load(deps.storage)?;
     if info.sender != manager {
         return Err(ContractError::Unauthorized {});
@@ -609,13 +609,21 @@ fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Res
 
     let treasury_addr = TREASURY.load(deps.storage)?;
 
-   // QUESTION: Setting the address to receive the rewards. Do this affect who does receive the unbonding tokens?
    let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
+
+   let mut vec_msg_bank:Vec<BankMsg> = vec![];
+   let balance = deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?;
+   if balance.amount != Uint128::zero() {
+        let address_treasury = TREASURY.load(deps.storage)?;
+        let msg_bank = BankMsg::Send { to_address: address_treasury, amount: vec![balance] };
+        vec_msg_bank.push(msg_bank);
+    }
 
     let msgs = msgs?;
     let res = Response::new()
         .add_message(msg_set_withdraw_address)
         .add_messages(msgs)
+        .add_messages(vec_msg_bank)
         .add_attribute("action", "withdraw_delegation_rewards");
     Ok(res)
 }
@@ -897,7 +905,7 @@ mod tests {
         );
 
         let info = mock_info(MANAGER1, &[]);
-        let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+        let _err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
         // assert_eq!(
         //     err,
         //     ContractError::NotInValidatorSet {

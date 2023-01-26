@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError, Uint128, Uint64, Validator};
+use cosmwasm_std::{StdError, Uint128, Uint64};
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
