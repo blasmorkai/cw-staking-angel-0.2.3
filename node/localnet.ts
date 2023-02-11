@@ -114,7 +114,7 @@ export const getAccountFromMnemonic = async (mnemonic: any, prefix: string = "co
     }
 }
 
-describe("Cosmwasm Template Tests", () => {
+describe("Capstone Demo Tests", () => {
     // xit("Generate Wallet", async () => {
     //     let wallet = await Secp256k1HdWallet.generate(24);
     //     console.log(wallet.mnemonic);
@@ -346,13 +346,6 @@ describe("Cosmwasm Template Tests", () => {
 
 
 
-
-
-
-
-
-
-
     xit("1.- Capstone Presentation - Initial Balances", async() => {
         setTimeout(() => { printBalances("INITIAL BALANCES"); }, 3000);
     }).timeout(20000);  
@@ -468,7 +461,7 @@ describe("Cosmwasm Template Tests", () => {
         // }
      }).timeout(20000); 
 
-    it("13.- Capstone Presentation - Balances after claiming rewards", async() => {
+    xit("13.- Capstone Presentation - Balances after claiming rewards", async() => {
         setTimeout(() => { printBalances("BALANCES after CLAIMING"); }, 3000);
     }).timeout(20000);  
 });

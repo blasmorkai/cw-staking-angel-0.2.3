@@ -93,6 +93,9 @@ pub enum ContractError {
     #[error("Mismatch on Validator staken and State bonded when removing validator")]
     RemovingValidatorBondedMismatch {  },
 
+    #[error("Balance mismatch: Ready to be claimed: {ready_claim} . Contract balance: {contract_balance}")]
+    BalanceDifference { ready_claim: String, contract_balance: String },
+
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },
 }

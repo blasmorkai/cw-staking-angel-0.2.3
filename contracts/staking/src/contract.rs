@@ -612,7 +612,16 @@ fn execute_collect_rewards ( deps: DepsMut, env: Env, info: MessageInfo) -> Resu
    let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
 
    let mut vec_msg_bank:Vec<BankMsg> = vec![];
-   let balance = deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?;
+   let mut balance = deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?;
+
+   let amount_ready_to_claim = CLAIMS.query_expired_claims(deps.as_ref(), &env.block)?;
+
+   if amount_ready_to_claim > balance.amount {
+       return Err(ContractError::BalanceDifference { ready_claim: amount_ready_to_claim.to_string(), contract_balance: balance.amount.to_string() });
+   }
+
+   balance.amount = balance.amount.checked_sub(amount_ready_to_claim).unwrap();
+
    if balance.amount != Uint128::zero() {
         let address_treasury = TREASURY.load(deps.storage)?;
         let msg_bank = BankMsg::Send { to_address: address_treasury, amount: vec![balance] };
@@ -633,10 +642,22 @@ fn execute_transfer_balance (deps: DepsMut, env: Env, info: MessageInfo) -> Resu
     if info.sender != manager {
         return Err(ContractError::Unauthorized {});
     }
-    let balance = deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?;
+    let mut balance = deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?;
 
     if balance.amount == Uint128::zero() {
-        return Err(ContractError::CustomError { val: "Nothing to transfer. Amount for bonded denom is zero".to_string() })
+        return Err(ContractError::CustomError { val: "Nothing to transfer. Contract balance is zero".to_string() })
+    }
+
+    let amount_ready_to_claim = CLAIMS.query_expired_claims(deps.as_ref(), &env.block)?;
+
+    if amount_ready_to_claim > balance.amount {
+        return Err(ContractError::BalanceDifference { ready_claim: amount_ready_to_claim.to_string(), contract_balance: balance.amount.to_string() });
+    }
+ 
+    balance.amount = balance.amount.checked_sub(amount_ready_to_claim).unwrap();
+
+    if balance.amount == Uint128::zero() {
+        return Err(ContractError::CustomError { val: "Nothing to transfer. (Contract balance - amount ready to claim) is zero".to_string() })
     }
 
     let address = TREASURY.load(deps.storage)?;
@@ -707,7 +728,8 @@ mod tests {
     use cosmwasm_std::{
         coins, Coin, CosmosMsg, Decimal, FullDelegation, Validator, from_binary, Delegation, StdError, 
     };
-    use cw_controllers::Claim;
+    //use cw_controllers::Claim;
+    use crate::myclaim::Claim;
     use cw_utils::{Duration, DAY, HOUR, WEEK};
 
     const MANAGER1: &str = "manager";
