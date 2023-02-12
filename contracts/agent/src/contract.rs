@@ -266,11 +266,9 @@ pub fn execute_claim(deps: DepsMut, _env: Env, info: MessageInfo, nft_id:String)
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-   
     match msg {
         QueryMsg::GetNFTAdress {  } => to_binary(&NFT.load(deps.storage)?),
         QueryMsg::GetStakingAdress {  } => to_binary(&STAKING.load(deps.storage)?),
-
     }
 }
 

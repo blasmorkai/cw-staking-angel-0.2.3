@@ -391,13 +391,13 @@ describe("Capstone Demo Tests", () => {
      }).timeout(20000);
 
      xit("7.- Capstone Presentation - UnBonding NFT", async() => {
-        console.log("------------------------UN-BONDING NFT------4000000-ujuno-----------");
+        console.log("------------------------UN-BONDING NFT-----------------");
         let data = await getAccountFromMnemonic(mnemonic, "juno");
         let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
         let user_address = await getAddress(mnemonic);
         let res = await client.execute(
             user_address, agent_contract_address, {
-                unbond : { nft_id: "0" }
+                unbond : { nft_id: "3" }
             }, 
             "auto", "", []
         );
@@ -409,13 +409,13 @@ describe("Capstone Demo Tests", () => {
      }).timeout(20000);
 
      xit("9.- Capstone Presentation - Claiming NFT", async() => {
-        console.log("------------------------CLAIMING NFT------4000000-ujuno-----------");
+        console.log("------------------------CLAIMING NFT-----------------");
         let data = await getAccountFromMnemonic(mnemonic, "juno");
         let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
         let user_address = await getAddress(mnemonic);
         let res = await client.execute(
             user_address, agent_contract_address, {
-                claim : { nft_id: "0" }
+                claim : { nft_id: "1" }
             }, 
             "auto", "", []
         );
@@ -443,7 +443,7 @@ describe("Capstone Demo Tests", () => {
         console.log(res);
      }).timeout(20000);
 
-    xit("12b.- Claim pending rewards: Send accumulated bonding rewards from validators to TREASURY", async() => {
+    it("12b.- Claim pending rewards: Send accumulated bonding rewards from validators to TREASURY", async() => {
         let data = await getAccountFromMnemonic(mnemonic_manager, "juno"); 
         let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
         let manager = await getAddress(mnemonic_manager);
@@ -461,7 +461,7 @@ describe("Capstone Demo Tests", () => {
         // }
      }).timeout(20000); 
 
-    xit("13.- Capstone Presentation - Balances after claiming rewards", async() => {
+    it("13.- Capstone Presentation - Balances after claiming rewards", async() => {
         setTimeout(() => { printBalances("BALANCES after CLAIMING"); }, 3000);
     }).timeout(20000);  
 });

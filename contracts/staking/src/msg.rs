@@ -35,6 +35,8 @@ pub enum QueryMsg {
     /// Claims shows the number of tokens this address can access when they are done unbonding.
     #[returns(ClaimsResponse)]
     Claims { nft_id: String },
+    #[returns(Uint128)]
+    AmountExpiredClaims {},
     #[returns(ValidatorInfo)]
     ValidatorInfo {address: String},
     #[returns(Uint128)]
@@ -54,7 +56,7 @@ pub enum QueryMsg {
     #[returns(String)]
     Manager {},
     #[returns(Coin)]
-    RewardsBalance {},
+    ContractBalance {},
     #[returns(Option<FullDelegation>)]
     DelegationOnValidator {address:String},        
     #[returns(Vec<Delegation>)]

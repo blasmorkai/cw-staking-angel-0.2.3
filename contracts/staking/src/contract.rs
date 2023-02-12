@@ -42,6 +42,9 @@ pub fn instantiate(
     TOTAL_CLAIMED.save(deps.storage, &Uint128::zero())?;
     NUMBER_VALIDATORS.save(deps.storage, &Uint64::zero())?;
 
+    // Setting up DistributionMsg::SetWithdrawAddress { address: msg.treasury } here does not seem to work.
+    // It seems, it must be sent after delegating to any chosen validator. Therefore it will be set up each time we claim rewards.
+
     Ok(Response::new()
         .add_attribute("action", "instantiate_staking")
     )   
@@ -607,8 +610,7 @@ fn execute_collect_rewards ( deps: DepsMut, env: Env, info: MessageInfo) -> Resu
             Ok(DistributionMsg::WithdrawDelegatorReward { validator: item.unwrap().0 }))
         .collect();
 
-    let treasury_addr = TREASURY.load(deps.storage)?;
-
+   let treasury_addr = TREASURY.load(deps.storage)?;
    let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
 
    let mut vec_msg_bank:Vec<BankMsg> = vec![];
@@ -676,11 +678,9 @@ fn execute_transfer_balance (deps: DepsMut, env: Env, info: MessageInfo) -> Resu
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     let state = State::new();
     match msg {
-        // Returns #[returns(ClaimsResponse)]
         QueryMsg::Claims { nft_id } => {to_binary(&CLAIMS.query_claims(deps, &Addr::unchecked(nft_id))?)},
-        // [returns(Validator_Info)]
+        QueryMsg::AmountExpiredClaims { } => {to_binary(&CLAIMS.query_expired_claims(deps, &env.block)?)},
         QueryMsg::ValidatorInfo {address} => to_binary(&state.validator.load(deps.storage,&address)?),
-        // [returns(Validator_Deposits)]
         QueryMsg::Bonded {} => to_binary(&BONDED.may_load(deps.storage)?.unwrap_or_default()),
         QueryMsg::Unbonding {} => to_binary(&UNBONDING.may_load(deps.storage)?.unwrap_or_default()),        
         QueryMsg::TotalBonded {} => to_binary(&TOTAL_BONDED.may_load(deps.storage)?.unwrap_or_default()),
@@ -688,7 +688,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::BondedOnValidator{address} => to_binary(&query_bonded_on_validator(deps, env, address)?),
         QueryMsg::Agent{} => to_binary(&AGENT.load(deps.storage)?),
         QueryMsg::Manager{} => to_binary(&MANAGER.load(deps.storage)?),
-        QueryMsg::RewardsBalance {  } => to_binary(&deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?),
+        QueryMsg::ContractBalance {  } => to_binary(&deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?),
         QueryMsg::AllDelegations {  } => to_binary(&deps.querier.query_all_delegations(env.contract.address)?),
         QueryMsg::DelegationOnValidator { address } => to_binary(&deps.querier.query_delegation(env.contract.address, address)?),
         QueryMsg::BondedByNFT { nft_id } => to_binary(&NFT_BONDED.may_load(deps.storage,&nft_id)?.unwrap_or_default()),
