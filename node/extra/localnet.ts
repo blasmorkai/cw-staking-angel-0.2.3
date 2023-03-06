@@ -344,8 +344,6 @@ describe("Capstone Demo Tests", () => {
     //     console.log("Tokens bonded on staking contract by nft 0 : "+ nft_bonded_staking_contract);
     // }).timeout(100000);
 
-
-
     xit("1.- Capstone Presentation - Initial Balances", async() => {
         setTimeout(() => { printBalances("INITIAL BALANCES"); }, 3000);
     }).timeout(20000);  
@@ -397,7 +395,7 @@ describe("Capstone Demo Tests", () => {
         let user_address = await getAddress(mnemonic);
         let res = await client.execute(
             user_address, agent_contract_address, {
-                unbond : { nft_id: "3" }
+                unbond : { nft_id: "1" }
             }, 
             "auto", "", []
         );
@@ -443,7 +441,7 @@ describe("Capstone Demo Tests", () => {
         console.log(res);
      }).timeout(20000);
 
-    it("12b.- Claim pending rewards: Send accumulated bonding rewards from validators to TREASURY", async() => {
+    xit("12b.- Claim pending rewards: Send accumulated bonding rewards from validators to CONTRACT", async() => {
         let data = await getAccountFromMnemonic(mnemonic_manager, "juno"); 
         let client = await SigningCosmWasmClient.connectWithSigner(rpcEndpoint, data.wallet, config);
         let manager = await getAddress(mnemonic_manager);
@@ -461,8 +459,12 @@ describe("Capstone Demo Tests", () => {
         // }
      }).timeout(20000); 
 
-    it("13.- Capstone Presentation - Balances after claiming rewards", async() => {
+    xit("13.- Capstone Presentation - Balances after claiming rewards", async() => {
         setTimeout(() => { printBalances("BALANCES after CLAIMING"); }, 3000);
     }).timeout(20000);  
 });
+
+
+
+
 

@@ -42,9 +42,6 @@ pub fn instantiate(
     TOTAL_CLAIMED.save(deps.storage, &Uint128::zero())?;
     NUMBER_VALIDATORS.save(deps.storage, &Uint64::zero())?;
 
-    // Setting up DistributionMsg::SetWithdrawAddress { address: msg.treasury } here does not seem to work.
-    // It seems, it must be sent after delegating to any chosen validator. Therefore it will be set up each time we claim rewards.
-
     Ok(Response::new()
         .add_attribute("action", "instantiate_staking")
     )   
@@ -594,7 +591,7 @@ fn get_all_bonded(querier: &QuerierWrapper, contract: &Addr) -> Result<Uint128, 
 }
 
 // Collect pending rewards from all validators
-fn execute_collect_rewards ( deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError>{
+fn execute_collect_rewards ( deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError>{
     let manager = MANAGER.load(deps.storage)?;
     if info.sender != manager {
         return Err(ContractError::Unauthorized {});
@@ -610,31 +607,31 @@ fn execute_collect_rewards ( deps: DepsMut, env: Env, info: MessageInfo) -> Resu
             Ok(DistributionMsg::WithdrawDelegatorReward { validator: item.unwrap().0 }))
         .collect();
 
-   let treasury_addr = TREASURY.load(deps.storage)?;
-   let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
+//    let treasury_addr = TREASURY.load(deps.storage)?;
+//    let msg_set_withdraw_address = DistributionMsg::SetWithdrawAddress { address: treasury_addr };
 
-   let mut vec_msg_bank:Vec<BankMsg> = vec![];
-   let mut balance = deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?;
+//    let mut vec_msg_bank:Vec<BankMsg> = vec![];
+//    let mut balance = deps.querier.query_balance(&env.contract.address, deps.querier.query_bonded_denom()?)?;
 
-   let amount_ready_to_claim = CLAIMS.query_expired_claims(deps.as_ref(), &env.block)?;
+//    let amount_ready_to_claim = CLAIMS.query_expired_claims(deps.as_ref(), &env.block)?;
 
-   if amount_ready_to_claim > balance.amount {
-       return Err(ContractError::BalanceDifference { ready_claim: amount_ready_to_claim.to_string(), contract_balance: balance.amount.to_string() });
-   }
+//    if amount_ready_to_claim > balance.amount {
+//        return Err(ContractError::BalanceDifference { ready_claim: amount_ready_to_claim.to_string(), contract_balance: balance.amount.to_string() });
+//    }
 
-   balance.amount = balance.amount.checked_sub(amount_ready_to_claim).unwrap();
+//    balance.amount = balance.amount.checked_sub(amount_ready_to_claim).unwrap();
 
-   if balance.amount != Uint128::zero() {
-        let address_treasury = TREASURY.load(deps.storage)?;
-        let msg_bank = BankMsg::Send { to_address: address_treasury, amount: vec![balance] };
-        vec_msg_bank.push(msg_bank);
-    }
+//    if balance.amount != Uint128::zero() {
+//         let address_treasury = TREASURY.load(deps.storage)?;
+//         let msg_bank = BankMsg::Send { to_address: address_treasury, amount: vec![balance] };
+//         vec_msg_bank.push(msg_bank);
+//     }
 
     let msgs = msgs?;
     let res = Response::new()
-        .add_message(msg_set_withdraw_address)
+ //       .add_message(msg_set_withdraw_address)
         .add_messages(msgs)
-        .add_messages(vec_msg_bank)
+ //       .add_messages(vec_msg_bank)
         .add_attribute("action", "withdraw_delegation_rewards");
     Ok(res)
 }
@@ -726,7 +723,7 @@ mod tests {
         mock_dependencies, mock_env, mock_info, MockQuerier, MOCK_CONTRACT_ADDR,
     };
     use cosmwasm_std::{
-        coins, Coin, CosmosMsg, Decimal, FullDelegation, Validator, from_binary, Delegation, StdError, 
+        coins, Coin, CosmosMsg, Decimal, FullDelegation, Validator, from_binary, Delegation, StdError, attr,
     };
     //use cw_controllers::Claim;
     use crate::myclaim::Claim;
@@ -1551,29 +1548,29 @@ mod tests {
         let env_later = later(&env, (WEEK + HOUR).unwrap());
         let info = mock_info(MANAGER1, &[]); 
         let msg = ExecuteMsg::CollectAngelRewards {  };
-        let res = execute(deps.as_mut(), env_later, info, msg).unwrap();
+        let res = execute(deps.as_mut(), env_later.clone(), info.clone(), msg).unwrap();
         assert_eq!(res.attributes[0], ("action", "withdraw_delegation_rewards"));
 
         // Suppose the rewards received are 50
         deps.querier.update_balance(MOCK_CONTRACT_ADDR, coins(50, "ustake"));
 
-        // let msg = ExecuteMsg::TransferBalanceToTreasury {  };
-        // let res = execute(deps.as_mut(), env_later, info.clone(), msg).unwrap();
-        // assert_eq!(res.attributes, vec![
-        //     attr("action", "transfer_balance"), 
-        //     attr("dst_addr", "treasury"), 
-        //     attr("denom","ustake"), 
-        //     attr("amount", "50")
-        //     ]
-        // );
-        // assert_eq!(res.messages[0].msg, 
-        //     CosmosMsg::Bank(
-        //         BankMsg::Send {
-        //             to_address: TREASURY1.to_string(), 
-        //             amount: vec![Coin { denom: "ustake".to_string(), amount: Uint128::from(50u128) }],
-        //         }
-        //     )
-        // );    
+        let msg = ExecuteMsg::TransferBalance {  };
+        let res = execute(deps.as_mut(), env_later, info, msg).unwrap();
+        assert_eq!(res.attributes, vec![
+            attr("action", "transfer_balance"), 
+            attr("dst_addr", "treasury"), 
+            attr("denom","ustake"), 
+            attr("amount", "50")
+            ]
+        );
+        assert_eq!(res.messages[0].msg, 
+            CosmosMsg::Bank(
+                BankMsg::Send {
+                    to_address: TREASURY1.to_string(), 
+                    amount: vec![Coin { denom: "ustake".to_string(), amount: Uint128::from(50u128) }],
+                }
+            )
+        );    
     }
 
 }

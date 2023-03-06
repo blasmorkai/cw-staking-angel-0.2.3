@@ -35,6 +35,6 @@ These contracts rely on the actor model to handle any of the user interactions, 
 
 ## Deployment on Juno Testnet
 
-- **Agent**: juno136qxeg4l9s02m4hqcnw9p0nfxvejg2at4s35jc7f658v856u9ndshxzcnw
-- **NFT**: juno1qmyuzkhhx2ucaxels8kmdgnj4y3sgfxhm28q09q56ew3tfmxfrhq6fc94z
-- **Staking**: juno1msj74sh4mxzs9a8tycctl6pp6g42ywnxram29hjtpvmcqccrkczq4es66a
+- **Agent**: juno1xc0s9lzk82sj9x6sr3rwgrvtlp7329laseu6s8qqueste0jeshkqf7j8xf
+- **NFT**: juno1k6we36nauhc85tulnv9pkg65y3hak3u8fclwq260x00cw3m835gssljrdp
+- **Staking**: juno1zpz0clkuppa5f7gmu7g70nszanee4sy9dzy6fahmyfgfj5e23tzqlvjzj0
